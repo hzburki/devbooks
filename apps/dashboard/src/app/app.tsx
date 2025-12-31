@@ -1,10 +1,11 @@
 import { Route, Routes, Link } from 'react-router-dom';
+import { Button } from '@devbooks/ui';
 
 export function App() {
   return (
     <div className="p-4 text-gray-800">
       <div className="text-3xl font-bold underline">Hello World</div>
-
+      <Button />
       <Routes>
         <Route
           path="/"
