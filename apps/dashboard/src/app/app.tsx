@@ -2,7 +2,7 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import Login from './login';
 import ForgotPassword from './forgot-password';
 import ResetPassword from './reset-password';
-import { Toaster } from '../components/ui/toast';
+import { Toaster } from '@devbooks/components';
 
 export function App() {
   return (

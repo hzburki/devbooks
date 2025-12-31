@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@devbooks/ui';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '@devbooks/hooks';
 import { Users, Mail, Lock } from 'lucide-react';
 
 type LoginFormData = {

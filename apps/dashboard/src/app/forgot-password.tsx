@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@devbooks/ui';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '@devbooks/hooks';
 import { Users, Mail, ArrowLeft } from 'lucide-react';
 
 type ForgotPasswordFormData = {
@@ -83,7 +83,9 @@ const ForgotPassword = () => {
                 />
               </div>
               {errors.email && (
-                <p className="text-destructive text-sm">{errors.email.message}</p>
+                <p className="text-destructive text-sm">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -113,4 +115,3 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
-

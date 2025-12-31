@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@devbooks/ui';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '@devbooks/hooks';
 import { Users, Lock, ArrowLeft } from 'lucide-react';
 
 type ResetPasswordFormData = {
@@ -50,7 +50,7 @@ const ResetPassword = () => {
       toast({
         title: 'Invalid token',
         description: 'Please use a valid password reset link.',
-        variant: 'destructive',
+        variant: 'error',
       });
       return;
     }
