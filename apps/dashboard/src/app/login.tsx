@@ -49,9 +49,21 @@ const Login = () => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     toast({
+      variant: 'info',
       title: 'Welcome back!',
       description: 'You have been logged in successfully.',
     });
+    toast({
+      variant: 'success',
+      title: 'Success',
+      description: 'You have been logged in successfully.',
+    });
+    toast({
+      variant: 'error',
+      title: 'Error',
+      description: 'An error occurred while logging in.',
+    });
+
     navigate('/dashboard');
   };
 
@@ -64,10 +76,10 @@ const Login = () => {
           </div>
           <div>
             <CardTitle className="text-foreground text-2xl font-bold">
-              Welcome Back
+              Welcome
             </CardTitle>
             <CardDescription className="text-muted-foreground mt-2">
-              Sign in to access your TeamFlow dashboard
+              Sign in to access your DevBooks dashboard
             </CardDescription>
           </div>
         </CardHeader>
