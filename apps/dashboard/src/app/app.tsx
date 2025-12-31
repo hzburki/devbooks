@@ -1,32 +1,25 @@
-import { Route, Routes, Link } from 'react-router-dom';
-import { Button } from '@devbooks/ui';
+import { Route, Routes } from 'react-router-dom';
+import Auth from './auth';
+import { Toaster } from '../components/ui/toast';
 
 export function App() {
   return (
-    <div className="p-4 text-gray-800">
-      <div className="text-3xl font-bold underline">Hello World</div>
-      <Button />
+    <>
       <Routes>
+        <Route path="/" element={<Auth />} />
+        <Route path="/login" element={<Auth />} />
         <Route
-          path="/"
+          path="/dashboard"
           element={
-            <div>
-              This is the generated root route.{' '}
-              <Link to="/page-2">Click here for page 2.</Link>
-            </div>
-          }
-        />
-        <Route
-          path="/page-2"
-          element={
-            <div>
-              <Link to="/">Click here to go back to root page.</Link>
+            <div className="p-4">
+              <h1 className="text-2xl font-bold">Dashboard</h1>
+              <p>Welcome to your dashboard!</p>
             </div>
           }
         />
       </Routes>
-      {/* END: routes */}
-    </div>
+      <Toaster />
+    </>
   );
 }
 
