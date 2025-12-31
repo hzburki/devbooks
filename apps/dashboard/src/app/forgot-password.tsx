@@ -1,4 +1,6 @@
 import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { Link } from 'react-router-dom';
 import { Button } from '@devbooks/ui';
 import { Input } from '@devbooks/ui';
@@ -17,13 +19,24 @@ type ForgotPasswordFormData = {
   email: string;
 };
 
+const forgotPasswordSchema = yup
+  .object({
+    email: yup
+      .string()
+      .required('Email is required')
+      .email('Invalid email address'),
+  })
+  .required();
+
 const ForgotPassword = () => {
   const { toast } = useToast();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordFormData>();
+  } = useForm<ForgotPasswordFormData>({
+    resolver: yupResolver(forgotPasswordSchema),
+  });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     // Simulate API call
@@ -66,13 +79,7 @@ const ForgotPassword = () => {
                   placeholder="you@company.com"
                   className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
                   autoComplete="email"
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  })}
+                  {...register('email')}
                 />
               </div>
               {errors.email && (

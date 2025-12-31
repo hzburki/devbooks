@@ -1,4 +1,6 @@
 import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@devbooks/ui';
 import { Input } from '@devbooks/ui';
@@ -18,6 +20,19 @@ type LoginFormData = {
   password: string;
 };
 
+const loginSchema = yup
+  .object({
+    email: yup
+      .string()
+      .required('Email is required')
+      .email('Invalid email address'),
+    password: yup
+      .string()
+      .required('Password is required')
+      .min(8, 'Password must be at least 8 characters'),
+  })
+  .required();
+
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,7 +40,9 @@ const Login = () => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>();
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
+  });
 
   const onSubmit = async (data: LoginFormData) => {
     // Simulate API call
@@ -69,17 +86,13 @@ const Login = () => {
                   placeholder="you@company.com"
                   className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
                   autoComplete="email"
-                  {...register('email', {
-                    required: 'Email is required',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Invalid email address',
-                    },
-                  })}
+                  {...register('email')}
                 />
               </div>
               {errors.email && (
-                <p className="text-destructive text-sm">{errors.email.message}</p>
+                <p className="text-destructive text-sm">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -95,13 +108,7 @@ const Login = () => {
                   placeholder="••••••••"
                   className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
                   autoComplete="current-password"
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters',
-                    },
-                  })}
+                  {...register('password')}
                 />
               </div>
               {errors.password && (
@@ -136,4 +143,3 @@ const Login = () => {
 };
 
 export default Login;
-

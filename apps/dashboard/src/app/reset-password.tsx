@@ -1,4 +1,6 @@
 import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@devbooks/ui';
 import { Input } from '@devbooks/ui';
@@ -18,6 +20,19 @@ type ResetPasswordFormData = {
   confirmPassword: string;
 };
 
+const resetPasswordSchema = yup
+  .object({
+    password: yup
+      .string()
+      .required('Password is required')
+      .min(8, 'Password must be at least 8 characters'),
+    confirmPassword: yup
+      .string()
+      .required('Please confirm your password')
+      .oneOf([yup.ref('password')], 'Passwords do not match'),
+  })
+  .required();
+
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
@@ -25,11 +40,10 @@ const ResetPassword = () => {
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors, isSubmitting },
-  } = useForm<ResetPasswordFormData>();
-
-  const password = watch('password');
+  } = useForm<ResetPasswordFormData>({
+    resolver: yupResolver(resetPasswordSchema),
+  });
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) {
@@ -81,13 +95,7 @@ const ResetPassword = () => {
                   placeholder="••••••••"
                   className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
                   autoComplete="new-password"
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: {
-                      value: 8,
-                      message: 'Password must be at least 8 characters',
-                    },
-                  })}
+                  {...register('password')}
                 />
               </div>
               {errors.password && (
@@ -109,11 +117,7 @@ const ResetPassword = () => {
                   placeholder="••••••••"
                   className={`pl-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                   autoComplete="new-password"
-                  {...register('confirmPassword', {
-                    required: 'Please confirm your password',
-                    validate: (value) =>
-                      value === password || 'Passwords do not match',
-                  })}
+                  {...register('confirmPassword')}
                 />
               </div>
               {errors.confirmPassword && (
