@@ -1,7 +1,12 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
+
+// Screens
 import Login from './login';
 import ForgotPassword from './forgot-password';
 import ResetPassword from './reset-password';
+import Dashboard from './dashboard';
+
+// Components
 import { Toaster } from '@devbooks/components';
 
 export function App() {
@@ -12,15 +17,7 @@ export function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route
-          path="/dashboard"
-          element={
-            <div className="p-4">
-              <h1 className="text-2xl font-bold">Dashboard</h1>
-              <p>Welcome to your dashboard!</p>
-            </div>
-          }
-        />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
       <Toaster />
     </>
