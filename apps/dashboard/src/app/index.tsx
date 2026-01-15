@@ -9,8 +9,7 @@ import Employees from './employees';
 import AddEmployee from './add-employee';
 import Invoices from './invoices';
 import Leaves from './leaves';
-import Records from './records';
-import Overtime from './overtime';
+import AddLeave from './add-leave';
 
 // Components
 import { Toaster } from '@devbooks/components';
@@ -28,8 +27,7 @@ export function App() {
         <Route path="/employees/add" element={<AddEmployee />} />
         <Route path="/invoices" element={<Invoices />} />
         <Route path="/leaves" element={<Leaves />} />
-        <Route path="/records" element={<Records />} />
-        <Route path="/overtime" element={<Overtime />} />
+        <Route path="/leaves/add" element={<AddLeave />} />
       </Routes>
       <Toaster />
     </>

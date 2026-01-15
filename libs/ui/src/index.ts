@@ -3,4 +3,6 @@ export * from './lib/input';
 export * from './lib/label';
 export * from './lib/card';
 export * from './lib/sheet';
+export * from './lib/calendar';
+export * from './lib/dialog';
 export * from './lib/utils';

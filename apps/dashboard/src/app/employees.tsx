@@ -14,7 +14,9 @@ import {
   ChevronRight,
   Filter,
   X,
+  FileText,
 } from 'lucide-react';
+import { EmployeeDocumentsModal } from './employee-documents-modal';
 
 // Mock employee data - replace with actual data from API/state management
 const mockEmployees = [
@@ -72,6 +74,11 @@ const Employees = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [startDateBefore, setStartDateBefore] = useState('');
   const [startDateAfter, setStartDateAfter] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<{
+    id: number;
+    name: string;
+  } | null>(null);
+  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
   const itemsPerPage = 5;
 
   // Filter employees based on search query and date filters
@@ -280,6 +287,22 @@ const Employees = () => {
                             size="icon"
                             className="h-8 w-8"
                             onClick={() => {
+                              setSelectedEmployee({
+                                id: employee.id,
+                                name: employee.fullName,
+                              });
+                              setDocumentsModalOpen(true);
+                            }}
+                            title="View Documents"
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span className="sr-only">Documents</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
                               // Handle edit
                               console.log('Edit employee:', employee.id);
                             }}
@@ -364,6 +387,16 @@ const Employees = () => {
           )}
         </div>
       </div>
+
+      {/* Documents Modal */}
+      {selectedEmployee && (
+        <EmployeeDocumentsModal
+          employeeId={selectedEmployee.id}
+          employeeName={selectedEmployee.name}
+          open={documentsModalOpen}
+          onOpenChange={setDocumentsModalOpen}
+        />
+      )}
     </DashboardPage>
   );
 };

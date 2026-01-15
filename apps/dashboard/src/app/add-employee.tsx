@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -8,7 +9,7 @@ import { Input } from '@devbooks/ui';
 import { Label } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { useToast } from '@devbooks/hooks';
-import { UserPlus, ArrowLeft } from 'lucide-react';
+import { UserPlus, ArrowLeft, FileText, X } from 'lucide-react';
 
 type EmployeeFormData = {
   // Work Details
@@ -21,24 +22,24 @@ type EmployeeFormData = {
   startDate: string;
   endDate?: string;
   exp?: string;
-  
+
   // Contact Info
   phone: string;
   email: string;
   address: string;
-  
+
   // Emergency Contact
   emergencyRelationship: string;
   emergencyName: string;
   emergencyNumber: string;
-  
+
   // Personal Bank Details
   bankName?: string;
   accountTitle?: string;
   iban?: string;
   swiftCode?: string;
   bankNameFull?: string;
-  
+
   // Payoneer Details
   payoneerName?: string;
   payoneerIban?: string;
@@ -66,7 +67,7 @@ const employeeSchema = yup
     startDate: yup.string().required('Start date is required'),
     endDate: yup.string(),
     exp: yup.string(),
-    
+
     // Contact Info
     phone: yup
       .string()
@@ -77,22 +78,24 @@ const employeeSchema = yup
       .required('Email is required')
       .email('Invalid email address'),
     address: yup.string().required('Address is required'),
-    
+
     // Emergency Contact
-    emergencyRelationship: yup.string().required('Emergency relationship is required'),
+    emergencyRelationship: yup
+      .string()
+      .required('Emergency relationship is required'),
     emergencyName: yup.string().required('Emergency contact name is required'),
     emergencyNumber: yup
       .string()
       .required('Emergency contact number is required')
       .matches(/^\+?[\d\s-]+$/, 'Invalid phone number format'),
-    
+
     // Personal Bank Details (optional)
     bankName: yup.string(),
     accountTitle: yup.string(),
     iban: yup.string(),
     swiftCode: yup.string(),
     bankNameFull: yup.string(),
-    
+
     // Payoneer Details (optional)
     payoneerName: yup.string(),
     payoneerIban: yup.string(),
@@ -106,9 +109,18 @@ const employeeSchema = yup
   })
   .required();
 
+const formatFileSize = (bytes: number) => {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+};
+
 const AddEmployee = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedFiles, setSelectedFiles] = useState<
+    Array<{ file: File; name: string }>
+  >([]);
   const {
     register,
     handleSubmit,
@@ -116,6 +128,25 @@ const AddEmployee = () => {
   } = useForm<EmployeeFormData>({
     resolver: yupResolver(employeeSchema),
   });
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newFiles = files.map((file) => ({
+      file,
+      name: file.name.replace(/\.[^/.]+$/, ''), // Default name without extension
+    }));
+    setSelectedFiles((prev) => [...prev, ...newFiles]);
+  };
+
+  const handleFileNameChange = (index: number, name: string) => {
+    setSelectedFiles((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, name } : item)),
+    );
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async (data: EmployeeFormData) => {
     // Simulate API call
@@ -154,7 +185,7 @@ const AddEmployee = () => {
                   className={errors.fullName ? 'border-destructive' : ''}
                 />
                 {errors.fullName && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.fullName.message}
                   </p>
                 )}
@@ -170,7 +201,7 @@ const AddEmployee = () => {
                   className={errors.fatherName ? 'border-destructive' : ''}
                 />
                 {errors.fatherName && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.fatherName.message}
                   </p>
                 )}
@@ -187,7 +218,7 @@ const AddEmployee = () => {
                   className={errors.cnic ? 'border-destructive' : ''}
                 />
                 {errors.cnic && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.cnic.message}
                   </p>
                 )}
@@ -204,7 +235,7 @@ const AddEmployee = () => {
                   className={errors.dateOfBirth ? 'border-destructive' : ''}
                 />
                 {errors.dateOfBirth && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.dateOfBirth.message}
                   </p>
                 )}
@@ -220,7 +251,7 @@ const AddEmployee = () => {
                   className={errors.designation ? 'border-destructive' : ''}
                 />
                 {errors.designation && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.designation.message}
                   </p>
                 )}
@@ -236,7 +267,7 @@ const AddEmployee = () => {
                   className={errors.type ? 'border-destructive' : ''}
                 />
                 {errors.type && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.type.message}
                   </p>
                 )}
@@ -253,7 +284,7 @@ const AddEmployee = () => {
                   className={errors.startDate ? 'border-destructive' : ''}
                 />
                 {errors.startDate && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.startDate.message}
                   </p>
                 )}
@@ -268,7 +299,7 @@ const AddEmployee = () => {
                   className={errors.endDate ? 'border-destructive' : ''}
                 />
                 {errors.endDate && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.endDate.message}
                   </p>
                 )}
@@ -282,7 +313,7 @@ const AddEmployee = () => {
                   className={errors.exp ? 'border-destructive' : ''}
                 />
                 {errors.exp && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.exp.message}
                   </p>
                 )}
@@ -309,7 +340,7 @@ const AddEmployee = () => {
                   className={errors.phone ? 'border-destructive' : ''}
                 />
                 {errors.phone && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.phone.message}
                   </p>
                 )}
@@ -326,7 +357,7 @@ const AddEmployee = () => {
                   className={errors.email ? 'border-destructive' : ''}
                 />
                 {errors.email && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.email.message}
                   </p>
                 )}
@@ -342,7 +373,7 @@ const AddEmployee = () => {
                   className={errors.address ? 'border-destructive' : ''}
                 />
                 {errors.address && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.address.message}
                   </p>
                 )}
@@ -370,7 +401,7 @@ const AddEmployee = () => {
                   }
                 />
                 {errors.emergencyRelationship && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.emergencyRelationship.message}
                   </p>
                 )}
@@ -386,7 +417,7 @@ const AddEmployee = () => {
                   className={errors.emergencyName ? 'border-destructive' : ''}
                 />
                 {errors.emergencyName && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.emergencyName.message}
                   </p>
                 )}
@@ -400,12 +431,10 @@ const AddEmployee = () => {
                   id="emergencyNumber"
                   type="tel"
                   {...register('emergencyNumber')}
-                  className={
-                    errors.emergencyNumber ? 'border-destructive' : ''
-                  }
+                  className={errors.emergencyNumber ? 'border-destructive' : ''}
                 />
                 {errors.emergencyNumber && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.emergencyNumber.message}
                   </p>
                 )}
@@ -429,7 +458,7 @@ const AddEmployee = () => {
                   className={errors.bankName ? 'border-destructive' : ''}
                 />
                 {errors.bankName && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.bankName.message}
                   </p>
                 )}
@@ -443,7 +472,7 @@ const AddEmployee = () => {
                   className={errors.accountTitle ? 'border-destructive' : ''}
                 />
                 {errors.accountTitle && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.accountTitle.message}
                   </p>
                 )}
@@ -457,7 +486,7 @@ const AddEmployee = () => {
                   className={errors.iban ? 'border-destructive' : ''}
                 />
                 {errors.iban && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.iban.message}
                   </p>
                 )}
@@ -471,7 +500,7 @@ const AddEmployee = () => {
                   className={errors.swiftCode ? 'border-destructive' : ''}
                 />
                 {errors.swiftCode && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.swiftCode.message}
                   </p>
                 )}
@@ -485,7 +514,7 @@ const AddEmployee = () => {
                   className={errors.bankNameFull ? 'border-destructive' : ''}
                 />
                 {errors.bankNameFull && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.bankNameFull.message}
                   </p>
                 )}
@@ -509,7 +538,7 @@ const AddEmployee = () => {
                   className={errors.payoneerName ? 'border-destructive' : ''}
                 />
                 {errors.payoneerName && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerName.message}
                   </p>
                 )}
@@ -523,7 +552,7 @@ const AddEmployee = () => {
                   className={errors.payoneerIban ? 'border-destructive' : ''}
                 />
                 {errors.payoneerIban && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerIban.message}
                   </p>
                 )}
@@ -539,7 +568,7 @@ const AddEmployee = () => {
                   }
                 />
                 {errors.payoneerBicSwift && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerBicSwift.message}
                   </p>
                 )}
@@ -553,7 +582,7 @@ const AddEmployee = () => {
                   className={errors.payoneerBank ? 'border-destructive' : ''}
                 />
                 {errors.payoneerBank && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerBank.message}
                   </p>
                 )}
@@ -569,7 +598,7 @@ const AddEmployee = () => {
                   }
                 />
                 {errors.payoneerBankAddress && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerBankAddress.message}
                   </p>
                 )}
@@ -587,7 +616,7 @@ const AddEmployee = () => {
                   }
                 />
                 {errors.payoneerRecipientAddress && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerRecipientAddress.message}
                   </p>
                 )}
@@ -603,7 +632,7 @@ const AddEmployee = () => {
                   }
                 />
                 {errors.payoneerCustomerName && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerCustomerName.message}
                   </p>
                 )}
@@ -619,7 +648,7 @@ const AddEmployee = () => {
                   }
                 />
                 {errors.payoneerCustomerId && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerCustomerId.message}
                   </p>
                 )}
@@ -634,12 +663,72 @@ const AddEmployee = () => {
                   className={errors.payoneerEmail ? 'border-destructive' : ''}
                 />
                 {errors.payoneerEmail && (
-                  <p className="text-destructive text-sm">
+                  <p className="text-sm text-destructive">
                     {errors.payoneerEmail.message}
                   </p>
                 )}
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Documents Upload (Optional) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Documents (Optional)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="employee-documents">Upload Documents</Label>
+              <Input
+                id="employee-documents"
+                type="file"
+                multiple
+                onChange={handleFileSelect}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx"
+                className="mt-2 cursor-pointer"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Accepted formats: PDF, DOC, DOCX, JPG, PNG, XLS, XLSX (Max 10MB
+                per file)
+              </p>
+            </div>
+
+            {selectedFiles.length > 0 && (
+              <div className="space-y-3">
+                <Label>File Names</Label>
+                {selectedFiles.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 rounded-lg border p-3"
+                  >
+                    <FileText className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <div className="flex-1">
+                      <Input
+                        value={item.name}
+                        onChange={(e) =>
+                          handleFileNameChange(index, e.target.value)
+                        }
+                        placeholder="Enter file name"
+                        className="bg-background"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {item.file.name} ({formatFileSize(item.file.size)})
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeFile(index)}
+                      className="h-8 w-8 shrink-0 text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

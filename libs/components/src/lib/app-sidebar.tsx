@@ -4,8 +4,6 @@ import {
   Users,
   FileText,
   Calendar,
-  FolderOpen,
-  Clock,
   LogOut,
   Building2,
   Menu,
@@ -21,8 +19,6 @@ const navigation = [
   { name: 'Employees', href: '/employees', icon: Users },
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Leaves', href: '/leaves', icon: Calendar },
-  { name: 'Records', href: '/records', icon: FolderOpen },
-  { name: 'Overtime', href: '/overtime', icon: Clock },
 ];
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
