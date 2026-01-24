@@ -1,0 +1,84 @@
+---
+description: Icon usage standards - only lucide-react icons exported from @devbooks/ui
+alwaysApply: true
+---
+
+# Icon Usage Standards
+
+All icons in this project must be imported from `@devbooks/ui`, not directly from `lucide-react` or as custom SVGs.
+
+## Rules
+
+1. **Only use lucide-react icons** - No custom SVG icons are allowed
+2. **Import from @devbooks/ui** - All icons must be imported from `@devbooks/ui`, never directly from `lucide-react`
+3. **Icons are centralized** - Icons are stored in `libs/ui/src/icons/` and exported from `libs/ui/src/index.ts`
+
+## Implementation Pattern
+
+Icons should be re-exported from `libs/ui/src/icons/index.ts`:
+
+```typescript
+// libs/ui/src/icons/index.ts
+export { Users, Mail, Lock, ArrowLeft, LayoutDashboard } from 'lucide-react';
+```
+
+Then exported from `libs/ui/src/index.ts`:
+
+```typescript
+// libs/ui/src/index.ts
+export * from './icons';
+export * from './atoms/button';
+// ... other exports
+```
+
+## Usage Examples
+
+```typescript
+// ✅ GOOD - Import from @devbooks/ui
+import { Users, Mail, Lock } from '@devbooks/ui';
+
+const Login = () => {
+  return (
+    <div>
+      <Users className="h-4 w-4" />
+      <Mail className="h-4 w-4" />
+    </div>
+  );
+};
+
+// ❌ BAD - Direct import from lucide-react
+import { Users, Mail } from 'lucide-react';
+
+// ❌ BAD - Custom SVG icons
+const CustomIcon = () => (
+  <svg>...</svg>
+);
+
+// ❌ BAD - Inline SVG
+<div>
+  <svg className="h-4 w-4">...</svg>
+</div>
+```
+
+## Adding New Icons
+
+When you need a new icon:
+
+1. Add the icon export to `libs/ui/src/icons/index.ts`:
+   ```typescript
+   export { NewIconName } from 'lucide-react';
+   ```
+
+2. The icon will automatically be available from `@devbooks/ui`:
+   ```typescript
+   import { NewIconName } from '@devbooks/ui';
+   ```
+
+3. Never import directly from `lucide-react` in application code
+
+## Benefits
+
+- **Consistency**: All icons come from the same source
+- **Maintainability**: Easy to swap icon libraries if needed
+- **Tree-shaking**: Icons are properly bundled and optimized
+- **Type safety**: TypeScript ensures icons exist before use

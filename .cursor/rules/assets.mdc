@@ -1,0 +1,80 @@
+---
+description: Asset management standards - all assets exported from centralized index
+alwaysApply: true
+---
+
+# Asset Management Standards
+
+All assets (images, SVGs, fonts, etc.) must be imported from the centralized assets index file, not directly from their source files.
+
+## Rules
+
+1. **Centralized exports** - All assets must be exported from `apps/dashboard/src/assets/index.ts`
+2. **Import from index** - Always import assets from `../assets` (or the appropriate relative path to the assets folder), never directly from asset files
+3. **Single source of truth** - The assets index file is the single source of truth for all asset exports
+
+## Implementation Pattern
+
+Assets should be exported from `apps/dashboard/src/assets/index.ts`:
+
+```typescript
+// apps/dashboard/src/assets/index.ts
+export { default as GoogleLogo } from './google-logo.svg';
+export { default as CompanyLogo } from './company-logo.png';
+export { default as BackgroundImage } from './background.jpg';
+// Add more assets as needed
+```
+
+## Usage Examples
+
+```typescript
+// ✅ GOOD - Import from assets index
+import { GoogleLogo, CompanyLogo } from '../assets';
+
+const Login = () => {
+  return (
+    <div>
+      <img src={GoogleLogo} alt="Google Logo" className="h-5 w-5" />
+      <img src={CompanyLogo} alt="Company Logo" />
+    </div>
+  );
+};
+
+// ❌ BAD - Direct import from asset file
+import GoogleLogo from '../assets/google-logo.svg';
+import CompanyLogo from '../assets/company-logo.png';
+
+// ❌ BAD - Importing from nested paths
+import GoogleLogo from '../assets/images/google-logo.svg';
+```
+
+## Adding New Assets
+
+When you need a new asset:
+
+1. Place the asset file in `apps/dashboard/src/assets/` directory
+2. Add the export to `apps/dashboard/src/assets/index.ts`:
+
+   ```typescript
+   export { default as NewAssetName } from './new-asset.svg';
+   ```
+
+3. Import from the assets index:
+   ```typescript
+   import { NewAssetName } from '../assets';
+   ```
+
+## Benefits
+
+- **Consistency**: All assets follow the same import pattern
+- **Maintainability**: Easy to find and update asset references
+- **Refactoring**: Simple to rename or move assets by updating one file
+- **Organization**: Clear structure for managing project assets
+- **Type safety**: Centralized exports help with TypeScript checking
+
+## Asset File Organization
+
+- Keep all assets in `apps/dashboard/src/assets/` directory
+- Use descriptive, kebab-case file names: `google-logo.svg`, `company-logo.png`
+- Export names should be PascalCase: `GoogleLogo`, `CompanyLogo`
+- Group related assets logically (e.g., all logos together, all icons together)

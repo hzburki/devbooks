@@ -1,153 +1,111 @@
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { useNavigate, Link } from 'react-router-dom';
-import { Button } from '@devbooks/ui';
-import { Input } from '@devbooks/ui';
-import { Label } from '@devbooks/ui';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  Users,
+  Loader2,
 } from '@devbooks/ui';
+import { Button } from '@devbooks/ui';
 import { useToast } from '@devbooks/hooks';
-import { Users, Mail, Lock } from 'lucide-react';
+import { GoogleLogo } from '../assets';
 
-type LoginFormData = {
-  email: string;
-  password: string;
-};
-
-const loginSchema = yup
-  .object({
-    email: yup
-      .string()
-      .required('Email is required')
-      .email('Invalid email address'),
-    password: yup
-      .string()
-      .required('Password is required')
-      .min(8, 'Password must be at least 8 characters'),
-  })
-  .required();
+const ALLOWED_DOMAIN = 'ideamappers.com';
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: yupResolver(loginSchema),
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = async (data: LoginFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
 
-    toast({
-      variant: 'info',
-      title: 'Welcome back!',
-      description: 'You have been logged in successfully.',
-    });
-    toast({
-      variant: 'success',
-      title: 'Success',
-      description: 'You have been logged in successfully.',
-    });
-    toast({
-      variant: 'error',
-      title: 'Error',
-      description: 'An error occurred while logging in.',
-    });
+    try {
+      // TODO: Integrate with Supabase Google OAuth
+      // This is a placeholder for the Google Sign-In flow
+      // When Supabase is integrated, replace this with actual OAuth flow
 
-    navigate('/dashboard');
+      // Simulate Google OAuth callback
+      // In production, this will be handled by Supabase's signInWithOAuth
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Mock user email - replace with actual user email from OAuth response
+      const mockUserEmail = 'user@ideamappers.com';
+
+      // Validate domain
+      if (!mockUserEmail.endsWith(`@${ALLOWED_DOMAIN}`)) {
+        toast({
+          variant: 'error',
+          title: 'Access Denied',
+          description: `Only @${ALLOWED_DOMAIN} email addresses are allowed to sign in.`,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      toast({
+        variant: 'success',
+        title: 'Welcome back!',
+        description: 'You have been logged in successfully.',
+      });
+
+      navigate('/dashboard');
+    } catch {
+      toast({
+        variant: 'error',
+        title: 'Sign In Failed',
+        description: 'An error occurred while signing in. Please try again.',
+      });
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="bg-background flex min-h-screen items-center justify-center p-4">
-      <Card className="shadow-card w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md shadow-card">
         <CardHeader className="space-y-4 text-center">
-          <div className="from-primary to-accent shadow-glow mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br">
-            <Users className="text-primary-foreground h-8 w-8" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent shadow-glow">
+            <Users className="h-8 w-8 text-primary-foreground" />
           </div>
           <div>
-            <CardTitle className="text-foreground text-2xl font-bold">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Welcome
             </CardTitle>
-            <CardDescription className="text-muted-foreground mt-2">
-              Sign in to access your DevBooks dashboard
+            <CardDescription className="mt-2 text-muted-foreground">
+              Sign in with your @{ALLOWED_DOMAIN} account to access your
+              DevBooks dashboard
             </CardDescription>
           </div>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@company.com"
-                  className={`pl-10 ${errors.email ? 'border-destructive' : ''}`}
-                  autoComplete="email"
-                  {...register('email')}
-                />
-              </div>
-              {errors.email && (
-                <p className="text-destructive text-sm">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
+        <CardContent className="space-y-4">
+          <Button
+            onClick={handleGoogleSignIn}
+            className="w-full"
+            variant="secondary"
+            disabled={isLoading}
+            type="button"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Signing in...
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-3">
+                <img src={GoogleLogo} alt="Google Logo" className="h-5 w-5" />
+                Sign in with Google
+              </span>
+            )}
+          </Button>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground">
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  className={`pl-10 ${errors.password ? 'border-destructive' : ''}`}
-                  autoComplete="current-password"
-                  {...register('password')}
-                />
-              </div>
-              {errors.password && (
-                <p className="text-destructive text-sm">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              variant="gradient"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Signing in...' : 'Sign In'}
-            </Button>
-
-            <div className="text-center">
-              <Link
-                to="/forgot-password"
-                className="text-primary hover:text-primary/80 text-sm transition-colors"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </form>
+          <p className="text-center text-xs text-muted-foreground">
+            Only @{ALLOWED_DOMAIN} email addresses are authorized to access this
+            application.
+          </p>
         </CardContent>
       </Card>
     </div>
