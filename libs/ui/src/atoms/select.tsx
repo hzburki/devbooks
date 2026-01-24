@@ -143,25 +143,25 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           {...props}
         >
           <span className="truncate">{displayValue}</span>
-          {hasValue ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="absolute right-3 flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none"
-              aria-label="Clear selection"
-            >
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          ) : (
-            <ChevronDown
-              className={cn(
-                'pointer-events-none absolute right-3 h-4 w-4 text-muted-foreground transition-transform',
-                isOpen && 'rotate-180',
-              )}
-              aria-hidden="true"
-            />
-          )}
         </button>
+        {hasValue ? (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-3 top-1/2 -translate-y-1/2 flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none"
+            aria-label="Clear selection"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        ) : (
+          <ChevronDown
+            className={cn(
+              'pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground transition-transform',
+              isOpen && 'rotate-180',
+            )}
+            aria-hidden="true"
+          />
+        )}
 
         {isOpen && (
           <div

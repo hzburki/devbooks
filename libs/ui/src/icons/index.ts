@@ -15,4 +15,11 @@ export {
   CalendarDays,
   ChevronDown,
   Check,
+  UserPlus,
+  Edit,
+  Trash2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
 } from 'lucide-react';

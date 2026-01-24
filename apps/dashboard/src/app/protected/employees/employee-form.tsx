@@ -7,7 +7,8 @@ import { Button } from '@devbooks/ui';
 import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { useToast } from '@devbooks/hooks';
-import { UserPlus, ArrowLeft } from 'lucide-react';
+import { employeesService } from '../../../services';
+import { UserPlus, ArrowLeft } from '@devbooks/ui';
 
 // Enum types from database
 const DESIGNATIONS = [
@@ -126,6 +127,7 @@ type EmployeeFormData = yup.InferType<typeof employeeSchema>;
 const EmployeeForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+
   const {
     register,
     handleSubmit,
@@ -134,7 +136,7 @@ const EmployeeForm = () => {
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<EmployeeFormData>({
-    resolver: yupResolver(employeeSchema) as any,
+    resolver: yupResolver(employeeSchema),
     defaultValues: {
       jobType: 'full_time',
       employmentStatus: 'probation',
@@ -142,16 +144,59 @@ const EmployeeForm = () => {
   });
 
   const onSubmit = async (data: EmployeeFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Map form data (camelCase) to database schema (snake_case)
+      const employeeData = {
+        full_name: data.fullName,
+        email: data.email,
+        date_of_birth: data.dateOfBirth || null,
+        designations: data.designations,
+        job_type: data.jobType,
+        start_date: data.startDate,
+        end_date: data.endDate || null,
+        employment_status: data.employmentStatus,
+        contact_number: data.contactNumber || null,
+        personal_email: data.personalEmail || null,
+        home_address: data.homeAddress || null,
+        emergency_contact_name: data.emergencyContactName || null,
+        relation_to_emergency_contact: data.relationToEmergencyContact || null,
+        emergency_contact_number: data.emergencyContactNumber || null,
+        personal_bank_name: data.personalBankName || null,
+        bank_account_title: data.bankAccountTitle || null,
+        iban: data.iban || null,
+        swift_code: data.swiftCode || null,
+        payoneer_name: data.payoneerName || null,
+        payoneer_email: data.payoneerEmail || null,
+        payoneer_customer_id: data.payoneerCustomerId || null,
+        nsave_name: data.nSaveName || null,
+        nsave_bank_name: data.nSaveBankName || null,
+        nsave_iban: data.nSaveIban || null,
+        nsave_swift_code: data.nSaveSwiftCode || null,
+        nsave_bank_address: data.nSaveBankAddress || null,
+        nsave_recipient_address: data.nSaveRecipientAddress || null,
+        user_type: 'employee' as const,
+      };
 
-    toast({
-      variant: 'success',
-      title: 'Employee Added',
-      description: 'Employee has been added successfully.',
-    });
+      await employeesService.create(employeeData);
 
-    navigate('/employees');
+      toast({
+        variant: 'success',
+        title: 'Employee Added',
+        description: 'Employee has been added successfully.',
+      });
+
+      navigate('/employees');
+    } catch (error) {
+      console.error('Error creating employee:', error);
+      toast({
+        variant: 'error',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to add employee. Please try again.',
+      });
+    }
   };
 
   return (
