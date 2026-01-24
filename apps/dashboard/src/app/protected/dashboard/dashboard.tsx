@@ -1,6 +1,6 @@
 import { DashboardPage } from '@devbooks/components';
 import { LayoutDashboard } from '@devbooks/ui';
-import { useSignOut } from '../../lib/auth-handler';
+import { useSignOut } from '../../../lib/auth-handler';
 
 const Dashboard = () => {
   const handleSignOut = useSignOut();

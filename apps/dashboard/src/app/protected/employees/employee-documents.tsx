@@ -20,7 +20,6 @@ import {
   X,
 } from 'lucide-react';
 import { useToast } from '@devbooks/hooks';
-import { cn } from '@devbooks/ui';
 
 type Document = {
   id: string;
@@ -88,7 +87,7 @@ export function EmployeeDocumentsModal({
     return mockDocuments.filter(
       (doc) =>
         doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.fileName.toLowerCase().includes(searchQuery.toLowerCase())
+        doc.fileName.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery]);
 
@@ -109,7 +108,7 @@ export function EmployeeDocumentsModal({
 
   const handleFileNameChange = (index: number, name: string) => {
     setSelectedFiles((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, name } : item))
+      prev.map((item, i) => (i === index ? { ...item, name } : item)),
     );
   };
 
@@ -155,7 +154,7 @@ export function EmployeeDocumentsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Documents - {employeeName}</DialogTitle>
           <DialogDescription>
@@ -166,7 +165,7 @@ export function EmployeeDocumentsModal({
         <div className="space-y-4">
           {/* Search and Upload Button */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative max-w-md flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 type="text"
@@ -373,7 +372,7 @@ export function EmployeeDocumentsModal({
                         >
                           {page}
                         </Button>
-                      )
+                      ),
                     )}
                   </div>
                   <Button

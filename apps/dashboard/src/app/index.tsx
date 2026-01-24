@@ -1,12 +1,7 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
 
 // Public routes (no authentication required)
-import {
-  Login,
-  AuthCallback,
-  ForgotPassword,
-  ResetPassword,
-} from './public';
+import { Login, AuthCallback } from './public';
 
 // Protected routes (authentication required)
 import {
@@ -29,8 +24,6 @@ export function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/dashboard"
           element={
