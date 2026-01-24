@@ -4,10 +4,254 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
 } from 'lucide-react';
-import { DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
+import {
+  DayButton,
+  DayPicker,
+  getDefaultClassNames,
+  type DropdownOption,
+} from 'react-day-picker';
 
 import { cn } from './utils';
 import { Button, buttonVariants } from './button';
+import { Check, ChevronDown } from '../icons';
+
+// Custom MonthsDropdown component matching Select styling
+function CustomMonthsDropdown({
+  options = [],
+  value,
+  onChange,
+  classNames,
+  components,
+  ...props
+}: {
+  options?: DropdownOption[];
+  value?: string | number | readonly string[];
+  onChange?: React.ChangeEventHandler<HTMLSelectElement> | ((value: string) => void);
+  classNames?: unknown;
+  components?: unknown;
+} & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children'>) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const valueStr = value?.toString();
+  const selectedOption = options.find((opt: DropdownOption) => opt.value?.toString() === valueStr);
+
+  const handleChange = (newValue: string) => {
+    if (typeof onChange === 'function') {
+      // Check if it's our custom onChange or the standard ChangeEventHandler
+      if (onChange.length === 1) {
+        // Our custom onChange: (value: string) => void
+        (onChange as (value: string) => void)(newValue);
+      } else {
+        // Standard ChangeEventHandler - create a synthetic event
+        const syntheticEvent = {
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLSelectElement>;
+        onChange(syntheticEvent);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+    return undefined;
+  }, [isOpen]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'border-input bg-background text-foreground ring-offset-background',
+          'flex h-10 items-center justify-between rounded-md border px-3 py-2 pr-10 text-sm',
+          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          !selectedOption && 'text-muted-foreground',
+        )}
+      >
+        <span className="truncate">
+          {selectedOption?.label || 'Select month'}
+        </span>
+        <ChevronDown
+          className={cn(
+            'pointer-events-none absolute right-3 h-4 w-4 text-muted-foreground transition-transform',
+            isOpen && 'rotate-180',
+          )}
+          aria-hidden="true"
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-md"
+        >
+          {options.map((option: DropdownOption) => {
+            const optionValueStr = option.value?.toString();
+            const isSelected = optionValueStr === valueStr;
+            return (
+              <div
+                key={option.value}
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={0}
+                onClick={() => {
+                  handleChange(optionValueStr || '');
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  'relative flex cursor-pointer select-none items-center px-3 py-2 text-sm outline-none transition-colors',
+                  isSelected
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-popover-foreground hover:bg-muted focus:bg-muted',
+                )}
+              >
+                {isSelected && (
+                  <Check className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                )}
+                <span>{option.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Custom YearsDropdown component matching Select styling
+function CustomYearsDropdown({
+  options = [],
+  value,
+  onChange,
+  classNames,
+  components,
+  ...props
+}: {
+  options?: DropdownOption[];
+  value?: string | number | readonly string[];
+  onChange?: React.ChangeEventHandler<HTMLSelectElement> | ((value: string) => void);
+  classNames?: unknown;
+  components?: unknown;
+} & Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'children'>) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  const valueStr = value?.toString();
+  const selectedOption = options.find((opt: DropdownOption) => opt.value?.toString() === valueStr);
+
+  const handleChange = (newValue: string) => {
+    if (typeof onChange === 'function') {
+      // Check if it's our custom onChange or the standard ChangeEventHandler
+      if (onChange.length === 1) {
+        // Our custom onChange: (value: string) => void
+        (onChange as (value: string) => void)(newValue);
+      } else {
+        // Standard ChangeEventHandler - create a synthetic event
+        const syntheticEvent = {
+          target: { value: newValue },
+        } as React.ChangeEvent<HTMLSelectElement>;
+        onChange(syntheticEvent);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+    return undefined;
+  }, [isOpen]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'border-input bg-background text-foreground ring-offset-background',
+          'flex h-10 items-center justify-between rounded-md border px-3 py-2 pr-10 text-sm',
+          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          !selectedOption && 'text-muted-foreground',
+        )}
+      >
+        <span className="truncate">
+          {selectedOption?.label || 'Select year'}
+        </span>
+        <ChevronDown
+          className={cn(
+            'pointer-events-none absolute right-3 h-4 w-4 text-muted-foreground transition-transform',
+            isOpen && 'rotate-180',
+          )}
+          aria-hidden="true"
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-md"
+        >
+          {options.map((option: DropdownOption) => {
+            const optionValueStr = option.value?.toString();
+            const isSelected = optionValueStr === valueStr;
+            return (
+              <div
+                key={option.value}
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={0}
+                onClick={() => {
+                  handleChange(optionValueStr || '');
+                  setIsOpen(false);
+                }}
+                className={cn(
+                  'relative flex cursor-pointer select-none items-center px-3 py-2 text-sm outline-none transition-colors',
+                  isSelected
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-popover-foreground hover:bg-muted focus:bg-muted',
+                )}
+              >
+                {isSelected && (
+                  <Check className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                )}
+                <span>{option.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Calendar({
   className,
@@ -66,7 +310,7 @@ function Calendar({
           defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
-          'has-focus:border-ring border-input shadow-xs has-focus:ring-ring/50 has-focus:ring-[3px] relative rounded-md border',
+          'relative',
           defaultClassNames.dropdown_root,
         ),
         dropdown: cn('absolute inset-0 opacity-0', defaultClassNames.dropdown),
@@ -143,6 +387,8 @@ function Calendar({
             <ChevronDownIcon className={cn('size-4', className)} {...props} />
           );
         },
+        MonthsDropdown: CustomMonthsDropdown,
+        YearsDropdown: CustomYearsDropdown,
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
           return (

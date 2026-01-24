@@ -193,11 +193,9 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                     )}
                   >
                     {isSelected && (
-                      <Check className="mr-2 h-4 w-4" aria-hidden="true" />
+                      <Check className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
                     )}
-                    <span className={cn(isSelected && 'ml-6')}>
-                      {option.label}
-                    </span>
+                    <span>{option.label}</span>
                   </div>
                 );
               })
