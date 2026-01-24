@@ -1,6 +1,7 @@
 export * from './icons';
 export * from './atoms/button';
 export * from './atoms/input';
+export * from './atoms/textarea';
 export * from './atoms/label';
 export * from './atoms/card';
 export * from './atoms/sheet';
