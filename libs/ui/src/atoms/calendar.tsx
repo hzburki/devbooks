@@ -38,17 +38,12 @@ function CustomMonthsDropdown({
 
   const handleChange = (newValue: string) => {
     if (typeof onChange === 'function') {
-      // Check if it's our custom onChange or the standard ChangeEventHandler
-      if (onChange.length === 1) {
-        // Our custom onChange: (value: string) => void
-        (onChange as (value: string) => void)(newValue);
-      } else {
-        // Standard ChangeEventHandler - create a synthetic event
-        const syntheticEvent = {
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLSelectElement>;
-        onChange(syntheticEvent);
-      }
+      // react-day-picker expects a ChangeEventHandler
+      const syntheticEvent = {
+        target: { value: newValue },
+        currentTarget: { value: newValue },
+      } as React.ChangeEvent<HTMLSelectElement>;
+      onChange(syntheticEvent);
     }
   };
 
@@ -79,7 +74,7 @@ function CustomMonthsDropdown({
         className={cn(
           'border-input bg-background text-foreground ring-offset-background',
           'flex h-10 items-center justify-between rounded-md border px-3 py-2 pr-10 text-sm',
-          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'focus:outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
           !selectedOption && 'text-muted-foreground',
         )}
@@ -102,7 +97,8 @@ function CustomMonthsDropdown({
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-md"
         >
           {options.map((option: DropdownOption) => {
-            const optionValueStr = option.value?.toString();
+            if (!option || option.value === undefined || option.value === null) return null;
+            const optionValueStr = option.value.toString();
             const isSelected = optionValueStr === valueStr;
             return (
               <div
@@ -111,7 +107,7 @@ function CustomMonthsDropdown({
                 aria-selected={isSelected}
                 tabIndex={0}
                 onClick={() => {
-                  handleChange(optionValueStr || '');
+                  handleChange(optionValueStr);
                   setIsOpen(false);
                 }}
                 className={cn(
@@ -157,17 +153,12 @@ function CustomYearsDropdown({
 
   const handleChange = (newValue: string) => {
     if (typeof onChange === 'function') {
-      // Check if it's our custom onChange or the standard ChangeEventHandler
-      if (onChange.length === 1) {
-        // Our custom onChange: (value: string) => void
-        (onChange as (value: string) => void)(newValue);
-      } else {
-        // Standard ChangeEventHandler - create a synthetic event
-        const syntheticEvent = {
-          target: { value: newValue },
-        } as React.ChangeEvent<HTMLSelectElement>;
-        onChange(syntheticEvent);
-      }
+      // react-day-picker expects a ChangeEventHandler
+      const syntheticEvent = {
+        target: { value: newValue },
+        currentTarget: { value: newValue },
+      } as React.ChangeEvent<HTMLSelectElement>;
+      onChange(syntheticEvent);
     }
   };
 
@@ -198,7 +189,7 @@ function CustomYearsDropdown({
         className={cn(
           'border-input bg-background text-foreground ring-offset-background',
           'flex h-10 items-center justify-between rounded-md border px-3 py-2 pr-10 text-sm',
-          'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+          'focus:outline-none',
           'disabled:cursor-not-allowed disabled:opacity-50',
           !selectedOption && 'text-muted-foreground',
         )}
@@ -220,8 +211,10 @@ function CustomYearsDropdown({
           role="listbox"
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-md"
         >
-          {options.map((option: DropdownOption) => {
-            const optionValueStr = option.value?.toString();
+          {/* Reverse the options array for years (newest to oldest) */}
+          {[...options].reverse().map((option: DropdownOption) => {
+            if (!option || option.value === undefined || option.value === null) return null;
+            const optionValueStr = option.value.toString();
             const isSelected = optionValueStr === valueStr;
             return (
               <div
@@ -230,7 +223,7 @@ function CustomYearsDropdown({
                 aria-selected={isSelected}
                 tabIndex={0}
                 onClick={() => {
-                  handleChange(optionValueStr || '');
+                  handleChange(optionValueStr);
                   setIsOpen(false);
                 }}
                 className={cn(
@@ -306,7 +299,8 @@ function Calendar({
           defaultClassNames.month_caption,
         ),
         dropdowns: cn(
-          'flex h-[--cell-size] w-full items-center justify-center gap-1.5 text-sm font-medium',
+          'flex h-[--cell-size] w-full items-center justify-center gap-3 text-sm font-medium',
+          'ml-[--cell-size] mr-[--cell-size]',
           defaultClassNames.dropdowns,
         ),
         dropdown_root: cn(
@@ -437,7 +431,7 @@ function CalendarDayButton({
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}
       className={cn(
-        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring group-data-[focused=true]/day:ring-ring/50 flex aspect-square h-auto w-full min-w-[--cell-size] flex-col gap-1 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10 group-data-[focused=true]/day:ring-[3px] data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md [&>span]:text-xs [&>span]:opacity-70',
+        'data-[selected-single=true]:bg-primary data-[selected-single=true]:text-primary-foreground data-[range-middle=true]:bg-accent data-[range-middle=true]:text-accent-foreground data-[range-start=true]:bg-primary data-[range-start=true]:text-primary-foreground data-[range-end=true]:bg-primary data-[range-end=true]:text-primary-foreground group-data-[focused=true]/day:border-ring  flex aspect-square h-auto w-full min-w-[--cell-size] flex-col gap-1 leading-none font-normal group-data-[focused=true]/day:relative group-data-[focused=true]/day:z-10  data-[range-end=true]:rounded-md data-[range-middle=true]:rounded-none data-[range-start=true]:rounded-md [&>span]:text-xs [&>span]:opacity-70',
         defaultClassNames.day,
         className,
       )}

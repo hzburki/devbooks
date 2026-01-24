@@ -86,7 +86,7 @@ const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
             className={cn(
               'border-input bg-background text-foreground ring-offset-background',
               'flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm',
-              'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+              'focus:outline-none',
               'disabled:cursor-not-allowed disabled:opacity-50',
               !hasValue && 'text-muted-foreground',
               hasError && 'border-destructive',
@@ -103,7 +103,7 @@ const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(
               <button
                 type="button"
                 onClick={handleClear}
-                className="ml-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="ml-2 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus:outline-none"
                 aria-label="Clear date"
               >
                 <X className="h-4 w-4" />
