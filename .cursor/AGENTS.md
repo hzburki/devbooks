@@ -13,7 +13,8 @@ DevBooks is an employee management dashboard application built for internal use 
 - **Form Handling**: React Hook Form with Yup validation
 - **Routing**: React Router DOM v6
 - **Authentication**: Supabase for authentication (restricted to @ideamappers.com domain)
-- **Backend**: Supabase (to be integrated)
+- **Backend**: Supabase (frontend-only, no separate backend server)
+- **Database**: All queries through Supabase client API in `services/` folder
 - **Monorepo**: Nx workspace with library-based architecture
 
 ### Project Structure
@@ -21,6 +22,14 @@ DevBooks is an employee management dashboard application built for internal use 
 ```
 apps/
   dashboard/          # Main application
+    src/
+      lib/
+        supabase/
+          client.ts   # Supabase client instance
+      services/       # All database queries (acts as backend)
+        auth.service.ts
+        employees.service.ts
+        index.ts
 libs/
   ui/                 # Atomic UI components (buttons, inputs, cards, etc.)
   components/         # Composite components (layouts, pages, etc.)
@@ -34,6 +43,10 @@ libs/
 3. **Component Composition**: Prefer composition over inheritance, build small reusable pieces
 4. **Consistent Patterns**: Follow established patterns in the codebase
 5. **Performance**: Consider React 19 features, avoid unnecessary re-renders
+6. **Follow Cursor Rules**: Always follow the rules defined in `.cursor/rules/` directory, especially:
+   - **Supabase Rules**: All database queries must go through the services folder - see `.cursor/rules/supabase.mdc`
+   - **Icon Rules**: Only use icons from `@devbooks/ui` - see `.cursor/rules/icons.mdc`
+   - **Asset Rules**: Import all assets from the centralized assets index - see `.cursor/rules/assets.mdc`
 
 ## TypeScript Best Practices
 
@@ -375,7 +388,11 @@ export const Button = ({ ... }: ButtonProps) => {
 ## Code Quality
 
 - Write self-documenting code with clear variable names
-- Add comments for complex logic or business rules
+- **Always write comments** - Every function, complex logic block, and non-obvious code should have comments
+- **Comment style** - Comments must be written in simple, plain English that a non-developer can understand
+- **Keep comments concise** - Comments should be brief and to the point, typically one line. Avoid verbose multi-line comments unless the code is truly complex
+- **Explain the "what" and "why"** - Comments should explain what the code is doing and why it's doing it, not just restate the code
+- **Extra detail for complex code** - Complex logic, algorithms, and business rules may require more detailed comments, but keep them focused and concise
 - Keep functions small and focused
 - Avoid deep nesting (max 3-4 levels)
 - Use early returns to reduce nesting
@@ -402,13 +419,129 @@ function processUser(user: User | null): string {
 }
 ```
 
+### Code Comments
+
+**Always write comments** for your code. Comments should be written in simple, plain English that non-developers can understand, but keep them **brief and concise**.
+
+#### Comment Guidelines:
+
+1. **Every function should have a brief comment** explaining what it does (typically one line)
+2. **Complex logic blocks** may need slightly more detail, but keep comments concise and focused
+3. **Business rules** should be documented with brief comments explaining the business logic
+4. **Non-obvious code** requires a simple one-line explanation
+5. **Use plain English** - Avoid technical jargon, explain concepts simply
+6. **Keep it short** - One-line comments are preferred. Only use multi-line comments when absolutely necessary for complex logic
+7. **Don't over-comment** - If the code is self-explanatory, a simple one-line comment is sufficient
+
+```typescript
+// ✅ GOOD - Brief, clear comments in plain English
+/**
+ * Signs the user out and redirects them to the login page.
+ */
+async function signOut() {
+  // End the user's session
+  await authService.signOut();
+  
+  // Show success message
+  toast({ variant: 'success', title: 'Signed out' });
+  
+  // Go back to login page
+  navigate('/login');
+}
+
+// ✅ GOOD - Concise comments for business logic
+function calculateEmployeeSalary(employee: Employee): number {
+  let total = employee.baseSalary;
+  
+  // Add 5% bonus for each year of service
+  const yearsWorked = getYearsWorked(employee.startDate);
+  total += employee.baseSalary * 0.05 * yearsWorked;
+  
+  // Managers get an additional $5,000 bonus
+  if (employee.role === 'manager') {
+    total += 5000;
+  }
+  
+  return total;
+}
+
+// ❌ BAD - No comments
+async function signOut() {
+  await authService.signOut();
+  toast({ variant: 'success', title: 'Signed out' });
+  navigate('/login');
+}
+
+// ❌ BAD - Over-commented, verbose
+async function signOut() {
+  // This function tells the authentication service to sign out the current user
+  // It does this by calling the signOut method on the authService object
+  // This will clear the user's session and remove their authentication token
+  await authService.signOut();
+  
+  // After signing out, we show a toast notification to inform the user
+  // The toast will display a success message indicating they've been signed out
+  toast({ variant: 'success', title: 'Signed out' });
+  
+  // Finally, we navigate the user back to the login page
+  // This ensures they can sign in again if needed
+  navigate('/login');
+}
+
+// ❌ BAD - Comments just repeat the code
+function calculateSalary(emp: Employee): number {
+  // Set total to base salary
+  let total = emp.baseSalary;
+  // Calculate years worked
+  const years = getYearsWorked(emp.startDate);
+  // Add percentage
+  total += emp.baseSalary * 0.05 * years;
+  return total;
+}
+```
+
+#### When to Comment:
+
+- **Functions/Methods**: Always add a brief one-line comment explaining what the function does
+- **Complex algorithms**: Add concise comments explaining the approach (one line per major step)
+- **Business logic**: Document business rules with brief comments
+- **Workarounds**: Explain temporary solutions or known issues briefly
+- **API calls**: Brief comment about what data is being fetched
+- **State management**: Brief comment about what state is being tracked
+- **Conditional logic**: Brief comment explaining the condition's purpose
+
+#### Comment Format:
+
+- Use `//` for single-line comments (preferred)
+- Use `/** */` for function documentation (JSDoc style) - keep it to 1-2 lines
+- Write comments above the code they explain
+- **Keep comments brief** - One line is usually enough. Only use multiple lines for truly complex logic
+- **Don't comment obvious code** - If the code is self-explanatory, a simple one-line comment is sufficient
+
+## Supabase Integration
+
+This project uses Supabase as a backend-as-a-service. **Always follow the Supabase rules** defined in `.cursor/rules/supabase.mdc`.
+
+### Key Points:
+
+- **No backend server** - All database operations use Supabase client API from the frontend
+- **Services folder** - All database queries must be in `apps/dashboard/src/services/` directory
+- **Centralized client** - Always use `lib/supabase/client.ts` for Supabase connection
+- **Service pattern** - Create service files like `auth.service.ts`, `employees.service.ts` for each domain
+- **Never query directly** - Never use Supabase client directly in components, always go through services
+
+See `.cursor/rules/supabase.mdc` for complete guidelines and examples.
+
 ## When Working on This Codebase
 
 1. **Check existing patterns** - Look at similar components/files before creating new ones
 2. **Use the library structure** - Don't duplicate code, extract to libs when reusable
 3. **Follow the naming conventions** - Consistency is key
 4. **Type everything** - No `any`, proper types for all functions and components
-5. **Test your changes** - Ensure the app still works after modifications
-6. **Keep components small** - If a component is >200 lines, consider splitting it
-7. **Use Tailwind utilities** - Don't create custom CSS unless necessary
-8. **Handle loading/error states** - Always consider these states in your UI
+5. **Write comments** - Always add plain English comments explaining what your code does
+6. **Follow Cursor rules** - Always check and follow rules in `.cursor/rules/` directory
+7. **Use services for database** - All Supabase queries must go through the services folder
+8. **Test your changes** - Ensure the app still works after modifications
+9. **Keep components small** - If a component is >200 lines, consider splitting it
+10. **Use Tailwind utilities** - Don't create custom CSS unless necessary
+11. **Handle loading/error states** - Always consider these states in your UI

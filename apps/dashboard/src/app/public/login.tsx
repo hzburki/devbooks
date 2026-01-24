@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -11,7 +11,8 @@ import {
 } from '@devbooks/ui';
 import { Button } from '@devbooks/ui';
 import { useToast } from '@devbooks/hooks';
-import { GoogleLogo } from '../assets';
+import { GoogleLogo } from '../../assets';
+import { authService } from '../../services';
 
 const ALLOWED_DOMAIN = 'ideamappers.com';
 
@@ -19,49 +20,62 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const session = await authService.getSession();
+        if (session) {
+          // User is already logged in, redirect to dashboard
+          navigate('/dashboard', { replace: true });
+        }
+      } catch {
+        // No session, user needs to log in
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
 
     try {
-      // TODO: Integrate with Supabase Google OAuth
-      // This is a placeholder for the Google Sign-In flow
-      // When Supabase is integrated, replace this with actual OAuth flow
+      // Initiate Google OAuth flow
+      // Supabase will automatically:
+      // - Sign in if user exists
+      // - Sign up if user doesn't exist
+      await authService.signInWithGoogle();
 
-      // Simulate Google OAuth callback
-      // In production, this will be handled by Supabase's signInWithOAuth
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // User will be redirected to Google, then back to /auth/callback
+      // No need to handle the response here as the callback page will handle it
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while signing in. Please try again.';
 
-      // Mock user email - replace with actual user email from OAuth response
-      const mockUserEmail = 'user@ideamappers.com';
-
-      // Validate domain
-      if (!mockUserEmail.endsWith(`@${ALLOWED_DOMAIN}`)) {
-        toast({
-          variant: 'error',
-          title: 'Access Denied',
-          description: `Only @${ALLOWED_DOMAIN} email addresses are allowed to sign in.`,
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      toast({
-        variant: 'success',
-        title: 'Welcome back!',
-        description: 'You have been logged in successfully.',
-      });
-
-      navigate('/dashboard');
-    } catch {
       toast({
         variant: 'error',
         title: 'Sign In Failed',
-        description: 'An error occurred while signing in. Please try again.',
+        description: errorMessage,
       });
       setIsLoading(false);
     }
   };
+
+  // Show loading state while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">

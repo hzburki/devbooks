@@ -1,18 +1,26 @@
 import { Route, Routes, Navigate } from 'react-router-dom';
 
-// Screens
-import Login from './login';
-import ForgotPassword from './forgot-password';
-import ResetPassword from './reset-password';
-import Dashboard from './dashboard';
-import Employees from './employees';
-import AddEmployee from './add-employee';
-import Invoices from './invoices';
-import Leaves from './leaves';
-import AddLeave from './add-leave';
+// Public routes (no authentication required)
+import {
+  Login,
+  AuthCallback,
+  ForgotPassword,
+  ResetPassword,
+} from './public';
+
+// Protected routes (authentication required)
+import {
+  Dashboard,
+  Employees,
+  AddEmployee,
+  Invoices,
+  Leaves,
+  AddLeave,
+} from './protected';
 
 // Components
 import { Toaster } from '@devbooks/components';
+import { ProtectedRoute } from '../lib/protected-route';
 
 export function App() {
   return (
@@ -20,14 +28,57 @@ export function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/employees" element={<Employees />} />
-        <Route path="/employees/add" element={<AddEmployee />} />
-        <Route path="/invoices" element={<Invoices />} />
-        <Route path="/leaves" element={<Leaves />} />
-        <Route path="/leaves/add" element={<AddLeave />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employees"
+          element={
+            <ProtectedRoute>
+              <Employees />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/employees/add"
+          element={
+            <ProtectedRoute>
+              <AddEmployee />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/invoices"
+          element={
+            <ProtectedRoute>
+              <Invoices />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leaves"
+          element={
+            <ProtectedRoute>
+              <Leaves />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leaves/add"
+          element={
+            <ProtectedRoute>
+              <AddLeave />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
       <Toaster />
     </>

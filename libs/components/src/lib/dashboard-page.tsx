@@ -41,6 +41,7 @@ interface DashboardPageProps {
   description?: string;
   action?: ReactNode;
   children: ReactNode;
+  onSignOut?: () => Promise<void>;
 }
 
 export function DashboardPage({
@@ -49,9 +50,10 @@ export function DashboardPage({
   description,
   action,
   children,
+  onSignOut,
 }: DashboardPageProps) {
   return (
-    <DashboardLayout>
+    <DashboardLayout onSignOut={onSignOut}>
       <div className="space-y-6">
         <DashboardPageHeader
           icon={icon}

@@ -1,0 +1,297 @@
+---
+description: Supabase database query standards - frontend-only API usage with services folder
+alwaysApply: true
+---
+
+# Supabase Database Standards
+
+This project uses Supabase as a backend-as-a-service. All database queries must go through the Supabase client API from the frontend. There is no separate backend server - the services folder acts as the backend layer.
+
+## Rules
+
+1. **Frontend-only API** - Only use Supabase client API (`@supabase/supabase-js`) from the frontend
+2. **Services folder** - All database queries must be in `apps/dashboard/src/services/` directory
+3. **Single Supabase client** - Always use the centralized Supabase client from `lib/supabase/client.ts`
+4. **No backend server** - Do not create any backend API routes or servers
+5. **Service organization** - Organize services by domain/feature (e.g., `auth.service.ts`, `employees.service.ts`)
+
+## Project Structure
+
+```
+apps/dashboard/src/
+  lib/
+    supabase/
+      client.ts          # Centralized Supabase client instance
+  services/              # All database queries go here
+    auth.service.ts      # Authentication-related queries
+    employees.service.ts # Employee-related queries
+    leaves.service.ts    # Leave-related queries
+    invoices.service.ts  # Invoice-related queries
+    index.ts            # Export all services
+```
+
+## Supabase Client Usage
+
+Always import and use the centralized Supabase client:
+
+```typescript
+// ✅ GOOD - Use centralized client
+import { supabase } from '../lib/supabase/client';
+
+// ❌ BAD - Creating new client instances
+import { createClient } from '@supabase/supabase-js';
+const supabase = createClient(...);
+```
+
+## Service File Pattern
+
+Create service files in `apps/dashboard/src/services/` following this pattern:
+
+```typescript
+// apps/dashboard/src/services/auth.service.ts
+import { supabase } from '../lib/supabase/client';
+
+export const authService = {
+  async signInWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  },
+
+  async getCurrentUser() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) throw error;
+    return user;
+  },
+};
+```
+
+## Database Query Pattern
+
+All database queries should follow this pattern:
+
+```typescript
+// apps/dashboard/src/services/employees.service.ts
+import { supabase } from '../lib/supabase/client';
+
+export const employeesService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getById(id: string) {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async create(employee: CreateEmployeeInput) {
+    const { data, error } = await supabase
+      .from('employees')
+      .insert(employee)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async update(id: string, updates: UpdateEmployeeInput) {
+    const { data, error } = await supabase
+      .from('employees')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async delete(id: string) {
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+};
+```
+
+## Error Handling
+
+Always handle errors properly in services:
+
+```typescript
+// ✅ GOOD - Proper error handling
+export const employeesService = {
+  async getAll() {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*');
+    
+    if (error) {
+      console.error('Error fetching employees:', error);
+      throw new Error(`Failed to fetch employees: ${error.message}`);
+    }
+    
+    return data;
+  },
+};
+
+// ❌ BAD - Ignoring errors
+export const employeesService = {
+  async getAll() {
+    const { data } = await supabase.from('employees').select('*');
+    return data; // Error is ignored
+  },
+};
+```
+
+## Type Safety
+
+Use TypeScript types for database tables:
+
+```typescript
+// Define types based on your Supabase schema
+export interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateEmployeeInput {
+  name: string;
+  email: string;
+}
+
+export interface UpdateEmployeeInput {
+  name?: string;
+  email?: string;
+}
+```
+
+## Service Exports
+
+Export all services from `apps/dashboard/src/services/index.ts`:
+
+```typescript
+// apps/dashboard/src/services/index.ts
+export * from './auth.service';
+export * from './employees.service';
+export * from './leaves.service';
+export * from './invoices.service';
+```
+
+## Usage in Components
+
+Import services in components:
+
+```typescript
+// ✅ GOOD - Import from services
+import { employeesService } from '../services';
+
+const EmployeesList = () => {
+  const [employees, setEmployees] = useState([]);
+
+  useEffect(() => {
+    employeesService.getAll().then(setEmployees);
+  }, []);
+
+  return (
+    // ...
+  );
+};
+
+// ❌ BAD - Direct Supabase queries in components
+import { supabase } from '../lib/supabase/client';
+
+const EmployeesList = () => {
+  useEffect(() => {
+    supabase.from('employees').select('*').then(...);
+  }, []);
+};
+```
+
+## Authentication
+
+For authentication, use Supabase Auth:
+
+```typescript
+// apps/dashboard/src/services/auth.service.ts
+import { supabase } from '../lib/supabase/client';
+
+export const authService = {
+  async signInWithGoogle() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        queryParams: {
+          hd: 'ideamappers.com', // Restrict to domain
+        },
+      },
+    });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async getSession() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return session;
+  },
+};
+```
+
+## Environment Variables
+
+Required environment variables:
+
+```env
+VITE_SUPABASE_URL=your-project-url
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+## Benefits
+
+- **No backend needed**: Supabase handles all backend functionality
+- **Type safety**: TypeScript types for database operations
+- **Centralized queries**: All database logic in one place
+- **Easy testing**: Services can be easily mocked and tested
+- **Consistency**: Standardized patterns across all database operations
+
+## Best Practices
+
+1. **One service per domain** - Group related queries together
+2. **Consistent naming** - Use `serviceName.service.ts` pattern
+3. **Error handling** - Always handle and throw errors properly
+4. **Type definitions** - Define types for all database entities
+5. **Export from index** - Export all services from `services/index.ts`
+6. **No direct queries** - Never query Supabase directly from components

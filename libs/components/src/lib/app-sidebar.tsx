@@ -3,12 +3,12 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  Calendar,
+  CalendarDays,
   LogOut,
   Building2,
   Menu,
   X,
-} from 'lucide-react';
+} from '@devbooks/ui';
 import { cn } from '@devbooks/ui';
 import { Button } from '@devbooks/ui';
 import { Sheet, SheetContent, SheetTrigger } from '@devbooks/ui';
@@ -18,11 +18,28 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Employees', href: '/employees', icon: Users },
   { name: 'Invoices', href: '/invoices', icon: FileText },
-  { name: 'Leaves', href: '/leaves', icon: Calendar },
+  { name: 'Leaves', href: '/leaves', icon: CalendarDays },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+interface SidebarContentProps {
+  onNavigate?: () => void;
+  onSignOut?: () => Promise<void>;
+}
+
+function SidebarContent({ onNavigate, onSignOut }: SidebarContentProps) {
   const location = useLocation();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleSignOut = async () => {
+    if (!onSignOut) return;
+    
+    setIsSigningOut(true);
+    try {
+      await onSignOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -66,16 +83,24 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Footer */}
       <div className="border-sidebar-border border-t p-3">
-        <button className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors">
+        <button
+          onClick={handleSignOut}
+          disabled={isSigningOut}
+          className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-50 disabled:cursor-not-allowed flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+        >
           <LogOut className="h-5 w-5" />
-          Sign Out
+          {isSigningOut ? 'Signing out...' : 'Sign Out'}
         </button>
       </div>
     </div>
   );
 }
 
-export function MobileHeader() {
+interface MobileHeaderProps {
+  onSignOut?: () => Promise<void>;
+}
+
+export function MobileHeader({ onSignOut }: MobileHeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -95,7 +120,7 @@ export function MobileHeader() {
           side="left"
           className="gradient-sidebar border-sidebar-border w-72 p-0"
         >
-          <SidebarContent onNavigate={() => setOpen(false)} />
+          <SidebarContent onNavigate={() => setOpen(false)} onSignOut={onSignOut} />
         </SheetContent>
       </Sheet>
       <div className="flex items-center gap-2">
@@ -110,10 +135,14 @@ export function MobileHeader() {
   );
 }
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  onSignOut?: () => Promise<void>;
+}
+
+export function AppSidebar({ onSignOut }: AppSidebarProps) {
   return (
     <aside className="gradient-sidebar border-sidebar-border fixed left-0 top-0 z-40 hidden h-screen w-64 border-r md:block">
-      <SidebarContent />
+      <SidebarContent onSignOut={onSignOut} />
     </aside>
   );
 }
