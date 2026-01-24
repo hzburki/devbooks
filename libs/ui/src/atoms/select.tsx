@@ -80,6 +80,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           document.removeEventListener('mousedown', handleClickOutside);
         };
       }
+      return undefined;
     }, [isOpen, onBlur]);
 
     // Handle keyboard navigation

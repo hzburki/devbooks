@@ -4,7 +4,7 @@ import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { DashboardPage } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
-import { Input, TextArea, Select } from '@devbooks/ui';
+import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { useToast } from '@devbooks/hooks';
 import { UserPlus, ArrowLeft } from 'lucide-react';
@@ -193,12 +193,15 @@ const EmployeeForm = () => {
                 error={errors.email?.message}
               />
 
-              <Input
+              <DatePicker
                 id="dateOfBirth"
-                type="date"
                 label="Date of Birth"
-                {...register('dateOfBirth')}
+                placeholder="Select date of birth"
+                value={watch('dateOfBirth')}
+                onChange={(value: string) => setValue('dateOfBirth', value)}
+                onBlur={() => trigger('dateOfBirth')}
                 error={errors.dateOfBirth?.message}
+                toYear={new Date().getFullYear() - 16}
               />
 
               <Select
@@ -256,23 +259,27 @@ const EmployeeForm = () => {
                 error={errors.employmentStatus?.message}
               />
 
-              <Input
+              <DatePicker
                 id="startDate"
-                type="date"
                 label={
                   <>
                     Start Date <span className="text-destructive">*</span>
                   </>
                 }
-                {...register('startDate')}
+                placeholder="Select start date"
+                value={watch('startDate')}
+                onChange={(value: string) => setValue('startDate', value)}
+                onBlur={() => trigger('startDate')}
                 error={errors.startDate?.message}
               />
 
-              <Input
+              <DatePicker
                 id="endDate"
-                type="date"
                 label="End Date"
-                {...register('endDate')}
+                placeholder="Select end date"
+                value={watch('endDate')}
+                onChange={(value: string) => setValue('endDate', value)}
+                onBlur={() => trigger('endDate')}
                 error={errors.endDate?.message}
               />
             </div>

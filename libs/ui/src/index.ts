@@ -8,6 +8,8 @@ export * from './atoms/card';
 export * from './atoms/sheet';
 export * from './atoms/dialog';
 export * from './atoms/utils';
+export * from './atoms/popover';
+export * from './atoms/date-picker';
 // Export Calendar component explicitly to avoid conflict with Calendar icon
-export { Calendar } from './atoms/calendar';
+export { Calendar, CalendarDayButton } from './atoms/calendar';
 export type { CalendarProps } from './atoms/calendar';
