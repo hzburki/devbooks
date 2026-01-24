@@ -1,15 +1,13 @@
-import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { DashboardPage } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
-import { Input, TextArea, Label } from '@devbooks/ui';
+import { Input, TextArea, Select } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { useToast } from '@devbooks/hooks';
 import { UserPlus, ArrowLeft } from 'lucide-react';
-import { cn } from '@devbooks/ui';
 
 // Enum types from database
 const DESIGNATIONS = [
@@ -125,30 +123,15 @@ const employeeSchema = yup
 
 type EmployeeFormData = yup.InferType<typeof employeeSchema>;
 
-// Select component styled to match Input
-const Select = React.forwardRef<
-  HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement>
->(({ className, ...props }, ref) => {
-  return (
-    <select
-      className={cn(
-        'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-        className,
-      )}
-      ref={ref}
-      {...props}
-    />
-  );
-});
-Select.displayName = 'Select';
-
 const EmployeeForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<EmployeeFormData>({
     resolver: yupResolver(employeeSchema) as any,
@@ -218,74 +201,60 @@ const EmployeeForm = () => {
                 error={errors.dateOfBirth?.message}
               />
 
-              <div className="space-y-2">
-                <Label htmlFor="designations">
-                  Designation <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  id="designations"
-                  {...register('designations')}
-                  className={errors.designations ? 'border-destructive' : ''}
-                >
-                  <option value="">Select designation</option>
-                  {DESIGNATIONS.map((value) => (
-                    <option key={value} value={value}>
-                      {formatEnumValue(value)}
-                    </option>
-                  ))}
-                </Select>
-                {errors.designations && (
-                  <p className="text-sm text-destructive">
-                    {errors.designations.message}
-                  </p>
-                )}
-              </div>
+              <Select
+                id="designations"
+                label={
+                  <>
+                    Designation <span className="text-destructive">*</span>
+                  </>
+                }
+                placeholder="Select designation"
+                options={DESIGNATIONS.map((value) => ({
+                  value,
+                  label: formatEnumValue(value),
+                }))}
+                value={watch('designations')}
+                onChange={(value) => setValue('designations', value)}
+                onBlur={() => trigger('designations')}
+                error={errors.designations?.message}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="jobType">
-                  Job Type <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  id="jobType"
-                  {...register('jobType')}
-                  className={errors.jobType ? 'border-destructive' : ''}
-                >
-                  {CONTRACT_TYPES.map((value) => (
-                    <option key={value} value={value}>
-                      {formatEnumValue(value)}
-                    </option>
-                  ))}
-                </Select>
-                {errors.jobType && (
-                  <p className="text-sm text-destructive">
-                    {errors.jobType.message}
-                  </p>
-                )}
-              </div>
+              <Select
+                id="jobType"
+                label={
+                  <>
+                    Job Type <span className="text-destructive">*</span>
+                  </>
+                }
+                placeholder="Select job type"
+                options={CONTRACT_TYPES.map((value) => ({
+                  value,
+                  label: formatEnumValue(value),
+                }))}
+                value={watch('jobType')}
+                onChange={(value) => setValue('jobType', value)}
+                onBlur={() => trigger('jobType')}
+                error={errors.jobType?.message}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="employmentStatus">
-                  Employment Status <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  id="employmentStatus"
-                  {...register('employmentStatus')}
-                  className={
-                    errors.employmentStatus ? 'border-destructive' : ''
-                  }
-                >
-                  {EMPLOYEE_STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {formatEnumValue(value)}
-                    </option>
-                  ))}
-                </Select>
-                {errors.employmentStatus && (
-                  <p className="text-sm text-destructive">
-                    {errors.employmentStatus.message}
-                  </p>
-                )}
-              </div>
+              <Select
+                id="employmentStatus"
+                label={
+                  <>
+                    Employment Status{' '}
+                    <span className="text-destructive">*</span>
+                  </>
+                }
+                placeholder="Select employment status"
+                options={EMPLOYEE_STATUSES.map((value) => ({
+                  value,
+                  label: formatEnumValue(value),
+                }))}
+                value={watch('employmentStatus')}
+                onChange={(value) => setValue('employmentStatus', value)}
+                onBlur={() => trigger('employmentStatus')}
+                error={errors.employmentStatus?.message}
+              />
 
               <Input
                 id="startDate"
@@ -390,28 +359,19 @@ const EmployeeForm = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="personalBankName">Bank Name</Label>
-                <Select
-                  id="personalBankName"
-                  {...register('personalBankName')}
-                  className={
-                    errors.personalBankName ? 'border-destructive' : ''
-                  }
-                >
-                  <option value="">Select bank</option>
-                  {BANK_NAMES.map((bank) => (
-                    <option key={bank} value={bank}>
-                      {bank}
-                    </option>
-                  ))}
-                </Select>
-                {errors.personalBankName && (
-                  <p className="text-sm text-destructive">
-                    {errors.personalBankName.message}
-                  </p>
-                )}
-              </div>
+              <Select
+                id="personalBankName"
+                label="Bank Name"
+                placeholder="Select bank"
+                options={BANK_NAMES.map((bank) => ({
+                  value: bank,
+                  label: bank,
+                }))}
+                value={watch('personalBankName')}
+                onChange={(value) => setValue('personalBankName', value)}
+                onBlur={() => trigger('personalBankName')}
+                error={errors.personalBankName?.message}
+              />
 
               <Input
                 id="bankAccountTitle"
