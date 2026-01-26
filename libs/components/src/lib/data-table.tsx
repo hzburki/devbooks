@@ -7,7 +7,6 @@ export interface Column<T> {
   header: string;
   accessor?: keyof T;
   render?: (row: T) => ReactNode;
-  align?: 'left' | 'right' | 'center';
 }
 
 export interface PaginationInfo {
@@ -53,9 +52,9 @@ export function DataTable<T>({
   // Loading state
   if (loading) {
     return (
-      <div className="rounded-lg border bg-card">
+      <div className="bg-card rounded-lg border">
         <div className="flex items-center justify-center py-12">
-          <div className="text-sm text-muted-foreground">{loadingText}</div>
+          <div className="text-muted-foreground text-sm">{loadingText}</div>
         </div>
       </div>
     );
@@ -65,13 +64,13 @@ export function DataTable<T>({
   if (!loading && data.length === 0 && emptyState) {
     const EmptyIcon = emptyState.icon;
     return (
-      <div className="rounded-lg border bg-card">
+      <div className="bg-card rounded-lg border">
         <div className="flex flex-col items-center justify-center px-6 py-12">
-          <EmptyIcon className="mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-semibold text-foreground">
+          <EmptyIcon className="text-muted-foreground mb-4 h-12 w-12" />
+          <h3 className="text-foreground mb-2 text-lg font-semibold">
             {emptyState.title}
           </h3>
-          <p className="mb-4 max-w-md text-center text-sm text-muted-foreground">
+          <p className="text-muted-foreground mb-4 max-w-md text-center text-sm">
             {emptyState.description}
           </p>
           {emptyState.action && emptyState.action}
@@ -92,33 +91,27 @@ export function DataTable<T>({
     : data.length;
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="bg-card rounded-lg border">
       {/* Table */}
       {data.length === 0 ? (
-        <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+        <div className="text-muted-foreground px-6 py-8 text-center text-sm">
           {noDataText}
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b bg-muted/50">
+              <tr className="bg-muted/50 border-b">
                 {columns.map((column, index) => (
                   <th
                     key={index}
-                    className={`px-6 py-3 text-sm font-semibold text-foreground ${
-                      column.align === 'right'
-                        ? 'text-right'
-                        : column.align === 'center'
-                          ? 'text-center'
-                          : 'text-left'
-                    }`}
+                    className={`text-foreground text-left} px-6 py-3 text-sm font-semibold`}
                   >
                     {column.header}
                   </th>
                 ))}
                 {hasActions && (
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">
+                  <th className="text-foreground px-6 py-3 text-right text-sm font-semibold">
                     Actions
                   </th>
                 )}
@@ -128,21 +121,15 @@ export function DataTable<T>({
               {data.map((row) => (
                 <tr
                   key={getRowId(row)}
-                  className="transition-colors hover:bg-muted/50"
+                  className="hover:bg-muted/50 transition-colors"
                 >
                   {columns.map((column, colIndex) => (
                     <td
                       key={colIndex}
-                      className={`px-6 py-4 text-sm ${
+                      className={`px-6 py-4 text-left text-sm ${
                         colIndex === 0
-                          ? 'font-medium text-foreground'
+                          ? 'text-foreground font-medium'
                           : 'text-muted-foreground'
-                      } ${
-                        column.align === 'right'
-                          ? 'text-right'
-                          : column.align === 'center'
-                            ? 'text-center'
-                            : 'text-left'
                       }`}
                     >
                       {column.render
@@ -167,53 +154,56 @@ export function DataTable<T>({
       )}
 
       {/* Pagination */}
-      {pagination &&
-        data.length > 0 &&
-        pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t px-6 py-4">
-            <div className="text-sm text-muted-foreground">
-              Showing {startIndex} to {endIndex} of {pagination.totalCount}{' '}
-              {pagination.totalCount === 1 ? 'item' : 'items'}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                disabled={pagination.currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <div className="flex items-center gap-1">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <Button
-                      key={page}
-                      variant={
-                        pagination.currentPage === page ? 'default' : 'outline'
-                      }
-                      size="sm"
-                      className="h-8 w-8"
-                      onClick={() => pagination.onPageChange(page)}
-                    >
-                      {page}
-                    </Button>
-                  ),
-                )}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                disabled={pagination.currentPage === pagination.totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+      {pagination && data.length > 0 && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between border-t px-6 py-4">
+          <div className="text-muted-foreground text-sm">
+            Showing {startIndex} to {endIndex} of {pagination.totalCount}{' '}
+            {pagination.totalCount === 1 ? 'item' : 'items'}
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                pagination.onPageChange(pagination.currentPage - 1)
+              }
+              disabled={pagination.currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from(
+                { length: pagination.totalPages },
+                (_, i) => i + 1,
+              ).map((page) => (
+                <Button
+                  key={page}
+                  variant={
+                    pagination.currentPage === page ? 'default' : 'outline'
+                  }
+                  size="sm"
+                  className="h-8 w-8"
+                  onClick={() => pagination.onPageChange(page)}
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                pagination.onPageChange(pagination.currentPage + 1)
+              }
+              disabled={pagination.currentPage === pagination.totalPages}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

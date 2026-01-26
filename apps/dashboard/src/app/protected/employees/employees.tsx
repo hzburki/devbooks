@@ -9,13 +9,7 @@ import {
 import { Button } from '@devbooks/ui';
 import { employeesService, type Employee } from '../../../services';
 import { useToast } from '@devbooks/utils';
-import {
-  Users,
-  UserPlus,
-  Edit,
-  Trash2,
-  FileText,
-} from '@devbooks/ui';
+import { Users, UserPlus, Edit, Trash2, FileText } from '@devbooks/ui';
 import { formatEnumValue } from '@devbooks/utils';
 
 // Helper function to format job type for display
@@ -117,8 +111,7 @@ const Employees = () => {
     },
     {
       header: 'Start Date',
-      render: (employee) =>
-        new Date(employee.start_date).toLocaleDateString(),
+      render: (employee) => new Date(employee.start_date).toLocaleDateString(),
     },
   ];
 
@@ -210,7 +203,7 @@ const Employees = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
+                className="h-8 w-8 text-destructive hover:bg-destructive hover:text-destructive-foreground"
                 onClick={() => {
                   // Handle delete
                   console.log('Delete employee:', employee.id);
