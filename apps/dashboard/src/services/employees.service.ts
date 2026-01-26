@@ -91,7 +91,9 @@ export const employeesService = {
   async getAll(): Promise<Employee[]> {
     const { data, error } = await supabase
       .from('employees')
-      .select('*')
+      .select(
+        'id, full_name, email, contact_number, designations, job_type, start_date, employment_status',
+      )
       .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
@@ -100,7 +102,7 @@ export const employeesService = {
       throw new Error(`Failed to fetch employees: ${error.message}`);
     }
 
-    return data || [];
+    return data as Employee[];
   },
 
   /**
@@ -127,7 +129,7 @@ export const employeesService = {
    */
   async update(
     id: string,
-    updates: Partial<CreateEmployeeInput>
+    updates: Partial<CreateEmployeeInput>,
   ): Promise<Employee> {
     const { data, error } = await supabase
       .from('employees')

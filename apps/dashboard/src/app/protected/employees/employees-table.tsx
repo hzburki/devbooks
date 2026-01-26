@@ -41,11 +41,6 @@ const Employees = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedEmployee, setSelectedEmployee] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [documentsModalOpen, setDocumentsModalOpen] = useState(false);
   const itemsPerPage = 5;
 
   // Fetch employees from Supabase
@@ -83,8 +78,7 @@ const Employees = () => {
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
       employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (employee.contact_number &&
-        employee.contact_number.includes(searchQuery))
+      (employee.contact_number && employee.contact_number.includes(searchQuery))
     );
   });
 
@@ -117,7 +111,7 @@ const Employees = () => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1); // Reset to first page on search
               }}
-              className="bg-background pl-10"
+              className="bg-white pl-10"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -135,15 +129,17 @@ const Employees = () => {
         <div className="rounded-lg border bg-card">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-sm text-muted-foreground">Loading employees...</div>
+              <div className="text-sm text-muted-foreground">
+                Loading employees...
+              </div>
             </div>
           ) : employees.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 px-6">
-              <Users className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+            <div className="flex flex-col items-center justify-center px-6 py-12">
+              <Users className="mb-4 h-12 w-12 text-muted-foreground" />
+              <h3 className="mb-2 text-lg font-semibold text-foreground">
                 No employees yet
               </h3>
-              <p className="text-sm text-muted-foreground text-center mb-4 max-w-md">
+              <p className="mb-4 max-w-md text-center text-sm text-muted-foreground">
                 Get started by adding your first employee to the system.
               </p>
               <Button
@@ -215,13 +211,7 @@ const Employees = () => {
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => {
-                                setSelectedEmployee({
-                                  id: employee.id,
-                                  name: employee.full_name,
-                                });
-                                setDocumentsModalOpen(true);
-                              }}
+                              onClick={() => null}
                               title="View Documents"
                             >
                               <FileText className="h-4 w-4" />
