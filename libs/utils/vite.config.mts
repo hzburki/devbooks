@@ -6,7 +6,7 @@ import * as path from 'path';
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  cacheDir: '../../node_modules/.vite/libs/hooks',
+  cacheDir: '../../node_modules/.vite/libs/utils',
   plugins: [
     react(),
     dts({
@@ -30,7 +30,7 @@ export default defineConfig(() => ({
     lib: {
       // Could also be a dictionary or array of multiple entry points.
       entry: 'src/index.ts',
-      name: '@devbooks/hooks',
+      name: '@devbooks/utils',
       fileName: 'index',
       // Change this to the formats you want to support.
       // Don't forget to update your package.json as well.

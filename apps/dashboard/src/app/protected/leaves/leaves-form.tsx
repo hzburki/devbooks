@@ -8,7 +8,7 @@ import { Input } from '@devbooks/ui';
 import { Label } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { cn } from '@devbooks/ui';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import { CalendarPlus, ArrowLeft } from 'lucide-react';
 
 type LeaveFormData = {

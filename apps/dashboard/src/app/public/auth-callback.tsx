@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import { Loader2 } from '@devbooks/ui';
 
 const AuthCallback = () => {

@@ -6,7 +6,7 @@ import { DashboardPage } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
 import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import { employeesService } from '../../../services';
 import { UserPlus, ArrowLeft } from '@devbooks/ui';
 

@@ -1,5 +1,5 @@
 {
-  "name": "@devbooks/hooks",
+  "name": "@devbooks/utils",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",

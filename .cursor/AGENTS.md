@@ -335,7 +335,7 @@ type status = 'active' | 'inactive';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '@devbooks/ui';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import { formatDate } from '../utils';
 
 // ❌ BAD
@@ -379,11 +379,11 @@ export const Button = ({ ... }: ButtonProps) => {
 - Import from `@devbooks/components` - e.g., `import { DashboardPage } from '@devbooks/components'`
 - These combine multiple UI components into higher-level patterns
 
-### @devbooks/hooks
+### @devbooks/utils
 
-- Contains shared React hooks
-- Import from `@devbooks/hooks` - e.g., `import { useToast } from '@devbooks/hooks'`
-- Extract reusable logic into hooks here
+- Contains shared utilities, hooks, and helper functions
+- Import from `@devbooks/utils` - e.g., `import { useToast } from '@devbooks/utils'`
+- Extract reusable logic into hooks and utilities here
 
 ## Code Quality
 

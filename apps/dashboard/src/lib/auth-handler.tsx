@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import { authService } from '../services';
 
 /**

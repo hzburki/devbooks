@@ -13,7 +13,7 @@
       "path": "./libs/components"
     },
     {
-      "path": "./libs/hooks"
+      "path": "./libs/utils"
     }
   ]
 }

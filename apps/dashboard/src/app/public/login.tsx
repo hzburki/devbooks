@@ -10,7 +10,7 @@ import {
   Loader2,
 } from '@devbooks/ui';
 import { Button } from '@devbooks/ui';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import { GoogleLogo } from '../../assets';
 import { authService } from '../../services';
 

@@ -4,7 +4,7 @@ import { DashboardPage } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
 import { Input } from '@devbooks/ui';
 import { employeesService, type Employee } from '../../../services';
-import { useToast } from '@devbooks/hooks';
+import { useToast } from '@devbooks/utils';
 import {
   Users,
   UserPlus,
