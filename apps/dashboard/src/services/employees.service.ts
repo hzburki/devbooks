@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase/client';
+import { buildSearchOrQuery } from '@devbooks/utils';
 
 export interface CreateEmployeeInput {
   full_name: string;
@@ -120,9 +121,10 @@ export const employeesService = {
 
     // Apply search filter if provided
     if (search) {
-      query = query.or(
-        `full_name.ilike.%${search}%,email.ilike.%${search}%,contact_number.ilike.%${search}%,designations.ilike.%${search}%`,
-      );
+      // Use helper function to build OR query for searching across multiple columns
+      const searchColumns = ['full_name', 'email', 'contact_number'];
+      const orQuery = buildSearchOrQuery(searchColumns, search);
+      query = query.or(orQuery);
     }
 
     // Apply ordering

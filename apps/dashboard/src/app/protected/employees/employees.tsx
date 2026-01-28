@@ -12,7 +12,7 @@ import {
   type Employee,
   type PaginatedResponse,
 } from '../../../services';
-import { useToast } from '@devbooks/utils';
+import { useToast, useDebounce } from '@devbooks/utils';
 import { Users, UserPlus, Edit, Trash2, FileText } from '@devbooks/ui';
 import { formatEnumValue } from '@devbooks/utils';
 
@@ -32,6 +32,7 @@ const Employees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState<
     PaginatedResponse<Employee>['pagination'] | null
@@ -47,7 +48,7 @@ const Employees = () => {
         const response = await employeesService.getAll({
           page: currentPage,
           pageSize: itemsPerPage,
-          search: searchQuery || undefined,
+          search: debouncedSearchQuery || undefined,
         });
         setEmployees(response.employees);
         setPagination(response.pagination);
@@ -67,8 +68,7 @@ const Employees = () => {
     };
 
     fetchEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchQuery]);
+  }, [currentPage, debouncedSearchQuery, itemsPerPage]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
