@@ -66,6 +66,22 @@ export interface Employee {
   deleted_at?: string | null;
 }
 
+export interface PaginatedResponse<T> {
+  employees: T[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+  };
+}
+
+export interface GetAllEmployeesParams {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}
+
 export const employeesService = {
   /**
    * Create a new employee
@@ -86,23 +102,58 @@ export const employeesService = {
   },
 
   /**
-   * Get all employees
+   * Get all employees with pagination
    */
-  async getAll(): Promise<Employee[]> {
-    const { data, error } = await supabase
+  async getAll(
+    params: GetAllEmployeesParams = {},
+  ): Promise<PaginatedResponse<Employee>> {
+    const { page = 1, pageSize = 10, search } = params;
+
+    // Build the query
+    let query = supabase
       .from('employees')
       .select(
         'id, full_name, email, contact_number, designations, job_type, start_date, employment_status',
+        { count: 'exact' },
       )
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .is('deleted_at', null);
+
+    // Apply search filter if provided
+    if (search) {
+      query = query.or(
+        `full_name.ilike.%${search}%,email.ilike.%${search}%,contact_number.ilike.%${search}%,designations.ilike.%${search}%`,
+      );
+    }
+
+    // Apply ordering
+    query = query.order('created_at', { ascending: false });
+
+    // Calculate pagination range
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    // Apply pagination
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error('Error fetching employees:', error);
       throw new Error(`Failed to fetch employees: ${error.message}`);
     }
 
-    return data as Employee[];
+    const totalCount = count ?? 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    return {
+      employees: (data as Employee[]) ?? [],
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalCount,
+        pageSize,
+      },
+    };
   },
 
   /**

@@ -7,7 +7,11 @@ import {
   type Column,
 } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
-import { employeesService, type Employee } from '../../../services';
+import {
+  employeesService,
+  type Employee,
+  type PaginatedResponse,
+} from '../../../services';
 import { useToast } from '@devbooks/utils';
 import { Users, UserPlus, Edit, Trash2, FileText } from '@devbooks/ui';
 import { formatEnumValue } from '@devbooks/utils';
@@ -29,15 +33,24 @@ const Employees = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [pagination, setPagination] = useState<
+    PaginatedResponse<Employee>['pagination'] | null
+  >(null);
+
+  const itemsPerPage = 10;
 
   // Fetch employees from Supabase
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
-        const data = await employeesService.getAll();
-        setEmployees(data);
+        const response = await employeesService.getAll({
+          page: currentPage,
+          pageSize: itemsPerPage,
+          search: searchQuery || undefined,
+        });
+        setEmployees(response.employees);
+        setPagination(response.pagination);
       } catch (error) {
         console.error('Error fetching employees:', error);
         toast({
@@ -55,32 +68,10 @@ const Employees = () => {
 
     fetchEmployees();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Filter employees based on search query
-  // TODO: Move this filtering to backend when implementing backend pagination
-  const filteredEmployees = employees.filter((employee) => {
-    // Text search filter
-    return (
-      employee.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      formatEnumValue(employee.designations)
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (employee.contact_number && employee.contact_number.includes(searchQuery))
-    );
-  });
-
-  // Calculate pagination (temporary frontend pagination)
-  // TODO: Replace with backend pagination data from Supabase
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+  }, [currentPage, searchQuery]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // TODO: Fetch new page data from backend when implementing backend pagination
   };
 
   // Define table columns
@@ -111,7 +102,14 @@ const Employees = () => {
     },
     {
       header: 'Start Date',
-      render: (employee) => new Date(employee.start_date).toLocaleDateString(),
+      render: (employee) =>
+        employee.start_date
+          ? new Date(employee.start_date).toLocaleDateString(undefined, {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })
+          : '-',
     },
   ];
 
@@ -145,7 +143,7 @@ const Employees = () => {
 
         {/* Table */}
         <DataTable
-          data={paginatedEmployees}
+          data={employees}
           columns={columns}
           loading={loading}
           loadingText="Loading employees..."
@@ -166,12 +164,9 @@ const Employees = () => {
             ),
           }}
           pagination={
-            filteredEmployees.length > 0 && totalPages > 1
+            pagination && pagination.totalPages > 1
               ? {
-                  currentPage,
-                  totalPages,
-                  totalCount: filteredEmployees.length,
-                  pageSize: itemsPerPage,
+                  ...pagination,
                   onPageChange: handlePageChange,
                 }
               : undefined

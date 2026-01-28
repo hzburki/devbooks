@@ -1,7 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { LucideIcon } from 'lucide-react';
-import { Button } from '@devbooks/ui';
+import { Button, Input } from '@devbooks/ui';
 import { ChevronLeft, ChevronRight } from '@devbooks/ui';
+import { DataTableLoading } from './data-table-loading';
 
 export interface Column<T> {
   header: string;
@@ -48,17 +49,14 @@ export function DataTable<T>({
   noDataText = 'No data found matching your search.',
 }: DataTableProps<T>) {
   const hasActions = !!actions;
+  const [pageInput, setPageInput] = useState<string>('');
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="bg-card rounded-lg border">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-muted-foreground text-sm">{loadingText}</div>
-        </div>
-      </div>
-    );
-  }
+  // Sync input with current page when pagination changes
+  useEffect(() => {
+    if (pagination) {
+      setPageInput(String(pagination.currentPage));
+    }
+  }, [pagination?.currentPage]);
 
   // Empty state (no data at all)
   if (!loading && data.length === 0 && emptyState) {
@@ -93,7 +91,13 @@ export function DataTable<T>({
   return (
     <div className="bg-card rounded-lg border">
       {/* Table */}
-      {data.length === 0 ? (
+      {loading ? (
+        <DataTableLoading
+          columns={columns}
+          hasActions={hasActions}
+          pagination={pagination}
+        />
+      ) : data.length === 0 ? (
         <div className="text-muted-foreground px-6 py-8 text-center text-sm">
           {noDataText}
         </div>
@@ -105,13 +109,13 @@ export function DataTable<T>({
                 {columns.map((column, index) => (
                   <th
                     key={index}
-                    className={`text-foreground text-left} px-6 py-3 text-sm font-semibold`}
+                    className="text-left px-6 py-3 text-sm font-semibold text-foreground"
                   >
                     {column.header}
                   </th>
                 ))}
                 {hasActions && (
-                  <th className="text-foreground px-6 py-3 text-right text-sm font-semibold">
+                  <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
                     Actions
                   </th>
                 )}
@@ -140,8 +144,8 @@ export function DataTable<T>({
                     </td>
                   ))}
                   {hasActions && (
-                    <td className="px-6 py-4 text-right text-sm">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="px-6 py-4 text-sm text-left">
+                      <div className="flex items-center justify-start gap-2">
                         {actions(row)}
                       </div>
                     </td>
@@ -154,7 +158,7 @@ export function DataTable<T>({
       )}
 
       {/* Pagination */}
-      {pagination && data.length > 0 && pagination.totalPages > 1 && (
+      {pagination && pagination.totalPages > 1 && !loading && (
         <div className="flex items-center justify-between border-t px-6 py-4">
           <div className="text-muted-foreground text-sm">
             Showing {startIndex} to {endIndex} of {pagination.totalCount}{' '}
@@ -172,23 +176,45 @@ export function DataTable<T>({
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <div className="flex items-center gap-1">
-              {Array.from(
-                { length: pagination.totalPages },
-                (_, i) => i + 1,
-              ).map((page) => (
-                <Button
-                  key={page}
-                  variant={
-                    pagination.currentPage === page ? 'default' : 'outline'
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-sm">Page</span>
+              <Input
+                type="number"
+                min={1}
+                max={pagination.totalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onBlur={(e) => {
+                  const page = parseInt(e.target.value, 10);
+                  if (
+                    !isNaN(page) &&
+                    page >= 1 &&
+                    page <= pagination.totalPages
+                  ) {
+                    pagination.onPageChange(page);
+                  } else {
+                    setPageInput(String(pagination.currentPage));
                   }
-                  size="sm"
-                  className="h-8 w-8"
-                  onClick={() => pagination.onPageChange(page)}
-                >
-                  {page}
-                </Button>
-              ))}
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const page = parseInt(pageInput, 10);
+                    if (
+                      !isNaN(page) &&
+                      page >= 1 &&
+                      page <= pagination.totalPages
+                    ) {
+                      pagination.onPageChange(page);
+                    } else {
+                      setPageInput(String(pagination.currentPage));
+                    }
+                  }
+                }}
+                className="h-8 w-16 text-center"
+              />
+              <span className="text-muted-foreground text-sm">
+                of {pagination.totalPages}
+              </span>
             </div>
             <Button
               variant="outline"
