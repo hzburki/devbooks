@@ -8,7 +8,7 @@ import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { useToast } from '@devbooks/utils';
 import { employeesService } from '../../../services';
-import { UserPlus, ArrowLeft } from '@devbooks/ui';
+import { UserPlus, ArrowLeft, Trash2, Plus } from '@devbooks/ui';
 
 // Enum types from database
 const DESIGNATIONS = [
@@ -102,10 +102,27 @@ const employeeSchema = yup
     emergencyContactNumber: yup.string().optional(),
 
     // Personal Bank Details
-    personalBankName: yup.string().optional(),
-    bankAccountTitle: yup.string().optional(),
-    iban: yup.string().optional(),
-    swiftCode: yup.string().optional(),
+    personalBankName: yup.string().required('Bank name is required'),
+    bankAccountTitle: yup.string().required('Account title is required'),
+    iban: yup.string().required('IBAN is required'),
+    swiftCode: yup.string().required('Swift code is required'),
+
+    // Documents
+    documents: yup
+      .array()
+      .of(
+        yup.object({
+          name: yup.string().required('Document name is required'),
+          file: yup
+            .mixed<File>()
+            .required('Document file is required')
+            .test('file-required', 'Document file is required', (value) => {
+              return value instanceof File && value.size > 0;
+            }),
+        }),
+      )
+      .min(1, 'At least one document is required')
+      .default([]),
 
     // Payoneer Details
     payoneerName: yup.string().optional(),
@@ -136,12 +153,57 @@ const EmployeeForm = () => {
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<EmployeeFormData>({
-    resolver: yupResolver(employeeSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: yupResolver(employeeSchema) as any,
     defaultValues: {
       jobType: 'full_time',
       employmentStatus: 'probation',
+      documents: [
+        { name: 'CNIC Front', file: new File([], '') },
+        { name: 'CNIC Back', file: new File([], '') },
+        { name: 'Resume', file: new File([], '') },
+        { name: 'Offer Letter', file: new File([], '') },
+      ],
     },
   });
+
+  const documents = watch('documents') || [];
+
+  const addDocument = () => {
+    const currentDocuments = watch('documents') || [];
+    setValue('documents', [
+      ...currentDocuments,
+      { name: '', file: new File([], '') },
+    ]);
+  };
+
+  const removeDocument = (index: number) => {
+    const currentDocuments = watch('documents') || [];
+    setValue(
+      'documents',
+      currentDocuments.filter((_, i) => i !== index),
+    );
+    trigger('documents');
+  };
+
+  const updateDocumentName = (index: number, name: string) => {
+    const currentDocuments = watch('documents') || [];
+    const updated = [...currentDocuments];
+    updated[index] = { ...updated[index], name };
+    setValue('documents', updated);
+    trigger(`documents.${index}.name`);
+  };
+
+  const updateDocumentFile = (index: number, file: File | undefined) => {
+    const currentDocuments = watch('documents') || [];
+    const updated = [...currentDocuments];
+    // Use provided file or keep empty File as placeholder
+    updated[index] = {
+      ...updated[index],
+      file: file || new File([], ''),
+    };
+    setValue('documents', updated);
+  };
 
   const onSubmit = async (data: EmployeeFormData) => {
     try {
@@ -161,10 +223,10 @@ const EmployeeForm = () => {
         emergency_contact_name: data.emergencyContactName || null,
         relation_to_emergency_contact: data.relationToEmergencyContact || null,
         emergency_contact_number: data.emergencyContactNumber || null,
-        personal_bank_name: data.personalBankName || null,
-        bank_account_title: data.bankAccountTitle || null,
-        iban: data.iban || null,
-        swift_code: data.swiftCode || null,
+        personal_bank_name: data.personalBankName,
+        bank_account_title: data.bankAccountTitle,
+        iban: data.iban,
+        swift_code: data.swiftCode,
         payoneer_name: data.payoneerName || null,
         payoneer_email: data.payoneerEmail || null,
         payoneer_customer_id: data.payoneerCustomerId || null,
@@ -176,6 +238,10 @@ const EmployeeForm = () => {
         nsave_recipient_address: data.nSaveRecipientAddress || null,
         user_type: 'employee' as const,
       };
+
+      // TODO: Handle document uploads (files) separately
+      // For now, we'll just create the employee
+      // Documents can be uploaded via a separate API endpoint or stored in Supabase Storage
 
       await employeesService.create(employeeData);
 
@@ -413,7 +479,11 @@ const EmployeeForm = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Select
                 id="personalBankName"
-                label="Bank Name"
+                label={
+                  <>
+                    Bank Name <span className="text-destructive">*</span>
+                  </>
+                }
                 placeholder="Select bank"
                 options={BANK_NAMES.map((bank) => ({
                   value: bank,
@@ -427,7 +497,11 @@ const EmployeeForm = () => {
 
               <Input
                 id="bankAccountTitle"
-                label="Account Title"
+                label={
+                  <>
+                    Account Title <span className="text-destructive">*</span>
+                  </>
+                }
                 placeholder="Enter account title"
                 {...register('bankAccountTitle')}
                 error={errors.bankAccountTitle?.message}
@@ -435,7 +509,11 @@ const EmployeeForm = () => {
 
               <Input
                 id="iban"
-                label="IBAN"
+                label={
+                  <>
+                    IBAN <span className="text-destructive">*</span>
+                  </>
+                }
                 placeholder="Enter IBAN"
                 {...register('iban')}
                 error={errors.iban?.message}
@@ -443,7 +521,11 @@ const EmployeeForm = () => {
 
               <Input
                 id="swiftCode"
-                label="Swift Code"
+                label={
+                  <>
+                    Swift Code <span className="text-destructive">*</span>
+                  </>
+                }
                 placeholder="Enter SWIFT code"
                 {...register('swiftCode')}
                 error={errors.swiftCode?.message}
@@ -548,6 +630,96 @@ const EmployeeForm = () => {
                 />
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Documents */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Documents</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              {documents.map((document, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-start"
+                >
+                  <div className="flex-1">
+                    <Input
+                      id={`document-name-${index}`}
+                      label={
+                        index === 0 ? (
+                          <>
+                            Document Name{' '}
+                            <span className="text-destructive">*</span>
+                          </>
+                        ) : (
+                          'Document Name'
+                        )
+                      }
+                      placeholder="Enter document name"
+                      value={document.name || ''}
+                      onChange={(e) =>
+                        updateDocumentName(index, e.target.value)
+                      }
+                      onBlur={() => trigger(`documents.${index}.name`)}
+                      error={errors.documents?.[index]?.name?.message as string}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      id={`document-file-${index}`}
+                      type="file"
+                      label={
+                        <>
+                          Upload Document{' '}
+                          <span className="text-destructive">*</span>
+                        </>
+                      }
+                      accept="*/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        updateDocumentFile(index, file);
+                        trigger(`documents.${index}.file`);
+                      }}
+                      onBlur={() => trigger(`documents.${index}.file`)}
+                      className="cursor-pointer"
+                      error={errors.documents?.[index]?.file?.message as string}
+                    />
+                  </div>
+                  {documents.length > 1 && (
+                    <div className="flex shrink-0 items-center sm:mt-7">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeDocument(index)}
+                        className="h-10 w-10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Remove document</span>
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addDocument}
+                className="w-full sm:w-auto"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Document
+              </Button>
+            </div>
+            {errors.documents &&
+              typeof errors.documents.message === 'string' && (
+                <p className="text-sm text-destructive">
+                  {errors.documents.message}
+                </p>
+              )}
           </CardContent>
         </Card>
 

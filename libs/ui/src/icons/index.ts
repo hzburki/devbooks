@@ -22,4 +22,5 @@ export {
   ChevronLeft,
   ChevronRight,
   Filter,
+  Plus,
 } from 'lucide-react';
