@@ -7,14 +7,11 @@ import {
   type Column,
 } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
-import {
-  employeesService,
-  type Employee,
-  type PaginatedResponse,
-} from '../../../services';
+import { employeesService, type Employee } from '../../../services';
 import { useToast, useDebounce } from '@devbooks/utils';
 import { Users, UserPlus, Edit, Trash2, FileText } from '@devbooks/ui';
 import { formatEnumValue } from '@devbooks/utils';
+import { useQuery } from '@tanstack/react-query';
 
 // Helper function to format job type for display
 const formatJobType = (jobType: string): string => {
@@ -27,48 +24,41 @@ const formatJobType = (jobType: string): string => {
 };
 
 const Employees = () => {
+  const itemsPerPage = 10;
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const debouncedSearchQuery = useDebounce(searchQuery, 500);
+
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState<
-    PaginatedResponse<Employee>['pagination'] | null
-  >(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const itemsPerPage = 10;
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  // Fetch employees from Supabase
+  const {
+    data: response,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ['employees', currentPage, debouncedSearchQuery, itemsPerPage],
+    queryFn: () =>
+      employeesService.getAll({
+        page: currentPage,
+        pageSize: itemsPerPage,
+        search: debouncedSearchQuery || undefined,
+      }),
+  });
+
   useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        setLoading(true);
-        const response = await employeesService.getAll({
-          page: currentPage,
-          pageSize: itemsPerPage,
-          search: debouncedSearchQuery || undefined,
-        });
-        setEmployees(response.employees);
-        setPagination(response.pagination);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-        toast({
-          variant: 'error',
-          title: 'Error',
-          description:
-            error instanceof Error
-              ? error.message
-              : 'Failed to load employees. Please try again.',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (error) {
+      toast({
+        variant: 'error',
+        title: 'Something went wrong 😟',
+        description: error.message,
+      });
+    }
+  }, [error, toast]);
 
-    fetchEmployees();
-  }, [currentPage, debouncedSearchQuery, itemsPerPage]);
+  const employees: Employee[] = response?.employees || [];
+  const pagination = response?.pagination || null;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -145,7 +135,7 @@ const Employees = () => {
         <DataTable
           data={employees}
           columns={columns}
-          loading={loading}
+          loading={isLoading}
           loadingText="Loading employees..."
           noDataText="No employees found matching your search."
           emptyState={{

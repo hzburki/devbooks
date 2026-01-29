@@ -45,7 +45,6 @@ export function DataTable<T>({
   emptyState,
   actions,
   getRowId,
-  loadingText = 'Loading...',
   noDataText = 'No data found matching your search.',
 }: DataTableProps<T>) {
   const hasActions = !!actions;
@@ -109,13 +108,13 @@ export function DataTable<T>({
                 {columns.map((column, index) => (
                   <th
                     key={index}
-                    className="text-left px-6 py-3 text-sm font-semibold text-foreground"
+                    className="text-foreground px-6 py-3 text-left text-sm font-semibold"
                   >
                     {column.header}
                   </th>
                 ))}
                 {hasActions && (
-                  <th className="text-left px-6 py-3 text-sm font-semibold text-foreground">
+                  <th className="text-foreground px-6 py-3 text-left text-sm font-semibold">
                     Actions
                   </th>
                 )}
@@ -144,7 +143,7 @@ export function DataTable<T>({
                     </td>
                   ))}
                   {hasActions && (
-                    <td className="px-6 py-4 text-sm text-left">
+                    <td className="px-6 py-4 text-left text-sm">
                       <div className="flex items-center justify-start gap-2">
                         {actions(row)}
                       </div>
