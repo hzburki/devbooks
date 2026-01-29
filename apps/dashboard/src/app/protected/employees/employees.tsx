@@ -9,9 +9,10 @@ import {
 import { Button } from '@devbooks/ui';
 import { employeesService, type Employee } from '../../../services';
 import { useToast, useDebounce } from '@devbooks/utils';
-import { Users, UserPlus, Edit, Trash2, FileText } from '@devbooks/ui';
+import { Users, UserPlus, Edit, FileText } from '@devbooks/ui';
 import { formatEnumValue } from '@devbooks/utils';
 import { useQuery } from '@tanstack/react-query';
+import { DeleteEmployee } from './delete-employee';
 
 // Helper function to format job type for display
 const formatJobType = (jobType: string): string => {
@@ -185,18 +186,7 @@ const Employees = () => {
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit</span>
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                onClick={() => {
-                  // Handle delete
-                  console.log('Delete employee:', employee.id);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete</span>
-              </Button>
+              <DeleteEmployee employee={employee} />
             </>
           )}
           getRowId={(employee) => employee.id}
