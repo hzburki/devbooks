@@ -1,14 +1,10 @@
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardPage } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
 import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
-import { useToast } from '@devbooks/utils';
-import { employeesService } from '../../../services';
-import { UserPlus, ArrowLeft, Trash2, Plus } from '@devbooks/ui';
+import { UserPlus, Edit, ArrowLeft, Trash2, Plus } from '@devbooks/ui';
+import { useEmployeeForm } from './use-employee-form';
 
 // Enum types from database
 const DESIGNATIONS = [
@@ -76,74 +72,23 @@ const formatEnumValue = (value: string): string => {
     .join(' ');
 };
 
-const employeeSchema = yup
-  .object({
-    // Work Details
-    fullName: yup.string().required('Full name is required'),
-    email: yup
-      .string()
-      .required('Email is required')
-      .email('Invalid email address'),
-    dateOfBirth: yup.string().optional(),
-    designations: yup.string().required('Designation is required'),
-    jobType: yup.string().required('Job type is required'),
-    startDate: yup.string().required('Start date is required'),
-    endDate: yup.string().optional(),
-    employmentStatus: yup.string().required('Employment status is required'),
-
-    // Contact Info
-    contactNumber: yup.string().optional(),
-    personalEmail: yup.string().email('Invalid email address').optional(),
-    homeAddress: yup.string().optional(),
-
-    // Emergency Contact
-    relationToEmergencyContact: yup.string().optional(),
-    emergencyContactName: yup.string().optional(),
-    emergencyContactNumber: yup.string().optional(),
-
-    // Personal Bank Details
-    personalBankName: yup.string().required('Bank name is required'),
-    bankAccountTitle: yup.string().required('Account title is required'),
-    iban: yup.string().required('IBAN is required'),
-    swiftCode: yup.string().required('Swift code is required'),
-
-    // Documents
-    documents: yup
-      .array()
-      .of(
-        yup.object({
-          name: yup.string().required('Document name is required'),
-          file: yup
-            .mixed<File>()
-            .required('Document file is required')
-            .test('file-required', 'Document file is required', (value) => {
-              return value instanceof File && value.size > 0;
-            }),
-        }),
-      )
-      .min(1, 'At least one document is required')
-      .default([]),
-
-    // Payoneer Details
-    payoneerName: yup.string().optional(),
-    payoneerEmail: yup.string().email('Invalid email address').optional(),
-    payoneerCustomerId: yup.string().optional(),
-
-    // nSave Details
-    nSaveName: yup.string().optional(),
-    nSaveBankName: yup.string().optional(),
-    nSaveIban: yup.string().optional(),
-    nSaveSwiftCode: yup.string().optional(),
-    nSaveBankAddress: yup.string().optional(),
-    nSaveRecipientAddress: yup.string().optional(),
-  })
-  .required();
-
-type EmployeeFormData = yup.InferType<typeof employeeSchema>;
-
 const EmployeeForm = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
+
+  const {
+    form,
+    onSubmit,
+    isEditMode,
+    isLoadingEmployee,
+    employeeError,
+    isSubmitting,
+    documents,
+    addDocument,
+    removeDocument,
+    updateDocumentName,
+    updateDocumentFile,
+  } = useEmployeeForm(id);
 
   const {
     register,
@@ -151,125 +96,56 @@ const EmployeeForm = () => {
     watch,
     setValue,
     trigger,
-    formState: { errors, isSubmitting },
-  } = useForm<EmployeeFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: yupResolver(employeeSchema) as any,
-    defaultValues: {
-      jobType: 'full_time',
-      employmentStatus: 'probation',
-      documents: [
-        { name: 'CNIC Front', file: new File([], '') },
-        { name: 'CNIC Back', file: new File([], '') },
-        { name: 'Resume', file: new File([], '') },
-        { name: 'Offer Letter', file: new File([], '') },
-      ],
-    },
-  });
+    formState: { errors },
+  } = form;
 
-  const documents = watch('documents') || [];
-
-  const addDocument = () => {
-    const currentDocuments = watch('documents') || [];
-    setValue('documents', [
-      ...currentDocuments,
-      { name: '', file: new File([], '') },
-    ]);
-  };
-
-  const removeDocument = (index: number) => {
-    const currentDocuments = watch('documents') || [];
-    setValue(
-      'documents',
-      currentDocuments.filter((_, i) => i !== index),
+  // Show loading state when fetching employee data in edit mode
+  if (isEditMode && isLoadingEmployee) {
+    return (
+      <DashboardPage
+        icon={Edit}
+        title="Edit Employee"
+        description="Loading employee data..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </DashboardPage>
     );
-    trigger('documents');
-  };
+  }
 
-  const updateDocumentName = (index: number, name: string) => {
-    const currentDocuments = watch('documents') || [];
-    const updated = [...currentDocuments];
-    updated[index] = { ...updated[index], name };
-    setValue('documents', updated);
-    trigger(`documents.${index}.name`);
-  };
-
-  const updateDocumentFile = (index: number, file: File | undefined) => {
-    const currentDocuments = watch('documents') || [];
-    const updated = [...currentDocuments];
-    // Use provided file or keep empty File as placeholder
-    updated[index] = {
-      ...updated[index],
-      file: file || new File([], ''),
-    };
-    setValue('documents', updated);
-  };
-
-  const onSubmit = async (data: EmployeeFormData) => {
-    try {
-      // Map form data (camelCase) to database schema (snake_case)
-      const employeeData = {
-        full_name: data.fullName,
-        email: data.email,
-        date_of_birth: data.dateOfBirth || null,
-        designations: data.designations,
-        job_type: data.jobType,
-        start_date: data.startDate,
-        end_date: data.endDate || null,
-        employment_status: data.employmentStatus,
-        contact_number: data.contactNumber || null,
-        personal_email: data.personalEmail || null,
-        home_address: data.homeAddress || null,
-        emergency_contact_name: data.emergencyContactName || null,
-        relation_to_emergency_contact: data.relationToEmergencyContact || null,
-        emergency_contact_number: data.emergencyContactNumber || null,
-        personal_bank_name: data.personalBankName,
-        bank_account_title: data.bankAccountTitle,
-        iban: data.iban,
-        swift_code: data.swiftCode,
-        payoneer_name: data.payoneerName || null,
-        payoneer_email: data.payoneerEmail || null,
-        payoneer_customer_id: data.payoneerCustomerId || null,
-        nsave_name: data.nSaveName || null,
-        nsave_bank_name: data.nSaveBankName || null,
-        nsave_iban: data.nSaveIban || null,
-        nsave_swift_code: data.nSaveSwiftCode || null,
-        nsave_bank_address: data.nSaveBankAddress || null,
-        nsave_recipient_address: data.nSaveRecipientAddress || null,
-        user_type: 'employee' as const,
-      };
-
-      // TODO: Handle document uploads (files) separately
-      // For now, we'll just create the employee
-      // Documents can be uploaded via a separate API endpoint or stored in Supabase Storage
-
-      await employeesService.create(employeeData);
-
-      toast({
-        variant: 'success',
-        title: 'Employee Added',
-        description: 'Employee has been added successfully.',
-      });
-
-      navigate('/employees');
-    } catch (error) {
-      console.error('Error creating employee:', error);
-      toast({
-        variant: 'error',
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to add employee. Please try again.',
-      });
-    }
-  };
+  // Show error state if employee data failed to load
+  if (isEditMode && employeeError) {
+    return (
+      <DashboardPage
+        icon={Edit}
+        title="Edit Employee"
+        description="Error loading employee data"
+      >
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-destructive mb-4 text-center">
+            {employeeError instanceof Error
+              ? employeeError.message
+              : 'Failed to load employee data. Please try again.'}
+          </p>
+          <Button onClick={() => navigate('/employees')} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Employees
+          </Button>
+        </div>
+      </DashboardPage>
+    );
+  }
 
   return (
     <DashboardPage
-      icon={UserPlus}
-      title="Add New Employee"
-      description="Fill in the employee details below"
+      icon={isEditMode ? Edit : UserPlus}
+      title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
+      description={
+        isEditMode
+          ? 'Update employee details below'
+          : 'Fill in the employee details below'
+      }
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Work Details */}

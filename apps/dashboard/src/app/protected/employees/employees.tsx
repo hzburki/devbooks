@@ -178,10 +178,8 @@ const Employees = () => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => {
-                  // Handle edit
-                  console.log('Edit employee:', employee.id);
-                }}
+                onClick={() => navigate(`/employees/edit/${employee.id}`)}
+                title="Edit Employee"
               >
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit</span>

@@ -49,6 +49,14 @@ export function App() {
           }
         />
         <Route
+          path="/employees/edit/:id"
+          element={
+            <ProtectedRoute>
+              <AddEmployee />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/invoices"
           element={
             <ProtectedRoute>
