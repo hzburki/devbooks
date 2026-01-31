@@ -7,8 +7,14 @@ import {
   type Column,
 } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
-import { employeesService, type Employee } from '../../../services';
-import { useToast, useDebounce, DESIGNATIONS, CONTRACT_TYPES } from '@devbooks/utils';
+import { employeesService } from '../../../services';
+import type { Employee } from '../../../../../../libs/utils/src/types';
+import {
+  useToast,
+  useDebounce,
+  DESIGNATIONS,
+  CONTRACT_TYPES,
+} from '@devbooks/utils';
 import { Users, UserPlus, Edit, FileText } from '@devbooks/ui';
 import { useQuery } from '@tanstack/react-query';
 import { DeleteEmployee } from './delete-employee';

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button, Trash2 } from '@devbooks/ui';
 import { ConfirmationDialog } from '@devbooks/components';
-import { employeesService, type Employee } from '../../../services';
+import { employeesService } from '../../../services';
+import type { Employee } from '../../../../../../libs/utils/src/types';
 import { useToast } from '@devbooks/utils';
 
 interface DeleteEmployeeProps {
@@ -65,7 +66,8 @@ export function DeleteEmployee({ employee }: DeleteEmployeeProps) {
         title="Delete Employee"
         description={
           <>
-            Are you sure you want to delete <strong>{employee.full_name}</strong>? This action cannot be undone.
+            Are you sure you want to delete{' '}
+            <strong>{employee.full_name}</strong>? This action cannot be undone.
           </>
         }
         confirmText="Delete"

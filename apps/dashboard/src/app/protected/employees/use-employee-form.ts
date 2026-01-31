@@ -5,39 +5,13 @@ import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@devbooks/utils';
-import { employeesService, type Employee } from '../../../services';
-
-// Employee form data type
-export type EmployeeFormData = {
-  fullName: string;
-  email: string;
-  dateOfBirth?: string;
-  designations: string;
-  jobType: string;
-  startDate: string;
-  endDate?: string;
-  employmentStatus: string;
-  contactNumber?: string;
-  personalEmail?: string;
-  homeAddress?: string;
-  relationToEmergencyContact?: string;
-  emergencyContactName?: string;
-  emergencyContactNumber?: string;
-  personalBankName: string;
-  bankAccountTitle: string;
-  iban: string;
-  swiftCode?: string;
-  documents?: Array<{ name: string; file: File }>;
-  payoneerName?: string;
-  payoneerEmail?: string;
-  payoneerCustomerId?: string;
-  nSaveName?: string;
-  nSaveBankName?: string;
-  nSaveIban?: string;
-  nSaveSwiftCode?: string;
-  nSaveBankAddress?: string;
-  nSaveRecipientAddress?: string;
-};
+import { employeesService } from '../../../services';
+import type {
+  Employee,
+  UpdateEmployeeInput,
+  CreateEmployeeInput,
+} from '../../../../../../libs/utils/src/types';
+import type { EmployeeFormData } from '../../../../../../libs/utils/src/types';
 
 // Create schema - documents are required for new employees
 const createEmployeeSchema = (isEditMode: boolean) => {
@@ -142,7 +116,7 @@ const mapEmployeeToFormData = (
 // Helper function to map form data (camelCase) to database schema (snake_case)
 const mapFormDataToEmployeeData = (
   data: EmployeeFormData,
-): Parameters<typeof employeesService.create>[0] => {
+): CreateEmployeeInput => {
   return {
     full_name: data.fullName,
     email: data.email,
@@ -228,8 +202,7 @@ export function useEmployeeForm(employeeId?: string) {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: Parameters<typeof employeesService.create>[0]) =>
-      employeesService.create(data),
+    mutationFn: (data: CreateEmployeeInput) => employeesService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       toast({
@@ -251,7 +224,7 @@ export function useEmployeeForm(employeeId?: string) {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: Parameters<typeof employeesService.update>[1]) => {
+    mutationFn: (data: UpdateEmployeeInput) => {
       if (!employeeId) {
         throw new Error('Employee ID is required');
       }
