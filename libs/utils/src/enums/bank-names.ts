@@ -1,0 +1,40 @@
+export type BankNameOption = {
+  value: string;
+  label: string;
+};
+
+export const BANK_NAMES: BankNameOption[] = [
+  { value: 'AlBaraka Bank (Pakistan) Limited', label: 'AlBaraka Bank (Pakistan) Limited' },
+  { value: 'Allied Bank Limited', label: 'Allied Bank Limited' },
+  { value: 'Askari Bank Limited', label: 'Askari Bank Limited' },
+  { value: 'Bank AL Habib Limited', label: 'Bank AL Habib Limited' },
+  { value: 'Bank Alfalah Limited', label: 'Bank Alfalah Limited' },
+  { value: 'The Bank of Khyber', label: 'The Bank of Khyber' },
+  { value: 'The Bank of Punjab', label: 'The Bank of Punjab' },
+  { value: 'BankIslami Pakistan Limited', label: 'BankIslami Pakistan Limited' },
+  { value: 'Citibank N.A.', label: 'Citibank N.A.' },
+  { value: 'Deutsche Bank AG', label: 'Deutsche Bank AG' },
+  { value: 'Dubai Islamic Bank Pakistan Limited', label: 'Dubai Islamic Bank Pakistan Limited' },
+  { value: 'Faysal Bank Limited', label: 'Faysal Bank Limited' },
+  { value: 'First Women Bank Limited', label: 'First Women Bank Limited' },
+  { value: 'Habib Bank Limited', label: 'Habib Bank Limited' },
+  { value: 'Habib Metropolitan Bank Limited', label: 'Habib Metropolitan Bank Limited' },
+  { value: 'Industrial and Commercial Bank of China Limited', label: 'Industrial and Commercial Bank of China Limited' },
+  { value: 'Industrial Development Bank of Pakistan', label: 'Industrial Development Bank of Pakistan' },
+  { value: 'JS Bank Limited', label: 'JS Bank Limited' },
+  { value: 'Meezan Bank Limited', label: 'Meezan Bank Limited' },
+  { value: 'MCB Bank Limited', label: 'MCB Bank Limited' },
+  { value: 'MCB Islamic Bank', label: 'MCB Islamic Bank' },
+  { value: 'National Bank of Pakistan', label: 'National Bank of Pakistan' },
+  { value: 'Punjab Provincial Cooperative Bank Ltd.', label: 'Punjab Provincial Cooperative Bank Ltd.' },
+  { value: 'Samba Bank Limited', label: 'Samba Bank Limited' },
+  { value: 'Sindh Bank Limited', label: 'Sindh Bank Limited' },
+  { value: 'Easypaisa Bank Limited', label: 'Easypaisa Bank Limited' },
+  { value: 'SME Bank Limited', label: 'SME Bank Limited' },
+  { value: 'Soneri Bank Limited', label: 'Soneri Bank Limited' },
+  { value: 'Standard Chartered Bank (Pakistan) Ltd', label: 'Standard Chartered Bank (Pakistan) Ltd' },
+  { value: 'Bank Makramah Limited', label: 'Bank Makramah Limited' },
+  { value: 'The Bank of Tokyo-Mitsubishi UFJ Ltd.', label: 'The Bank of Tokyo-Mitsubishi UFJ Ltd.' },
+  { value: 'United Bank Limited', label: 'United Bank Limited' },
+  { value: 'Zarai Taraqiati Bank Ltd.', label: 'Zarai Taraqiati Bank Ltd.' },
+];

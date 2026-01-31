@@ -4,73 +4,13 @@ import { Button } from '@devbooks/ui';
 import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
 import { UserPlus, Edit, ArrowLeft, Trash2, Plus } from '@devbooks/ui';
+import {
+  DESIGNATIONS,
+  CONTRACT_TYPES,
+  EMPLOYEE_STATUSES,
+  BANK_NAMES,
+} from '@devbooks/utils';
 import { useEmployeeForm } from './use-employee-form';
-
-// Enum types from database
-const DESIGNATIONS = [
-  'full_stack_developer',
-  'qa_engineer',
-  'hr_manager',
-  'devops_engineer',
-  'technical_recruiter',
-  'wordpress_developer',
-  'react_native_developer',
-  'frontend_developer',
-  'backend_developer',
-] as const;
-
-const CONTRACT_TYPES = ['full_time', 'part_time', 'project_based'] as const;
-
-const EMPLOYEE_STATUSES = [
-  'current',
-  'terminated',
-  'resigned',
-  'probation',
-] as const;
-
-const BANK_NAMES = [
-  'AlBaraka Bank (Pakistan) Limited',
-  'Allied Bank Limited',
-  'Askari Bank Limited',
-  'Bank AL Habib Limited',
-  'Bank Alfalah Limited',
-  'The Bank of Khyber',
-  'The Bank of Punjab',
-  'BankIslami Pakistan Limited',
-  'Citibank N.A.',
-  'Deutsche Bank AG',
-  'Dubai Islamic Bank Pakistan Limited',
-  'Faysal Bank Limited',
-  'First Women Bank Limited',
-  'Habib Bank Limited',
-  'Habib Metropolitan Bank Limited',
-  'Industrial and Commercial Bank of China Limited',
-  'Industrial Development Bank of Pakistan',
-  'JS Bank Limited',
-  'Meezan Bank Limited',
-  'MCB Bank Limited',
-  'MCB Islamic Bank',
-  'National Bank of Pakistan',
-  'Punjab Provincial Cooperative Bank Ltd.',
-  'Samba Bank Limited',
-  'Sindh Bank Limited',
-  'Easypaisa Bank Limited',
-  'SME Bank Limited',
-  'Soneri Bank Limited',
-  'Standard Chartered Bank (Pakistan) Ltd',
-  'Bank Makramah Limited',
-  'The Bank of Tokyo-Mitsubishi UFJ Ltd.',
-  'United Bank Limited',
-  'Zarai Taraqiati Bank Ltd.',
-] as const;
-
-// Helper function to format enum values for display
-const formatEnumValue = (value: string): string => {
-  return value
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-};
 
 const EmployeeForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,7 +63,7 @@ const EmployeeForm = () => {
         description="Error loading employee data"
       >
         <div className="flex flex-col items-center justify-center py-12">
-          <p className="text-destructive mb-4 text-center">
+          <p className="mb-4 text-center text-destructive">
             {employeeError instanceof Error
               ? employeeError.message
               : 'Failed to load employee data. Please try again.'}
@@ -146,6 +86,7 @@ const EmployeeForm = () => {
           ? 'Update employee details below'
           : 'Fill in the employee details below'
       }
+      onBack={() => navigate('/employees')}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Work Details */}
@@ -199,10 +140,8 @@ const EmployeeForm = () => {
                   </>
                 }
                 placeholder="Select designation"
-                options={DESIGNATIONS.map((value) => ({
-                  value,
-                  label: formatEnumValue(value),
-                }))}
+                options={DESIGNATIONS}
+                searchable
                 value={watch('designations')}
                 onChange={(value) => setValue('designations', value)}
                 onBlur={() => trigger('designations')}
@@ -217,10 +156,7 @@ const EmployeeForm = () => {
                   </>
                 }
                 placeholder="Select job type"
-                options={CONTRACT_TYPES.map((value) => ({
-                  value,
-                  label: formatEnumValue(value),
-                }))}
+                options={CONTRACT_TYPES}
                 value={watch('jobType')}
                 onChange={(value) => setValue('jobType', value)}
                 onBlur={() => trigger('jobType')}
@@ -236,10 +172,7 @@ const EmployeeForm = () => {
                   </>
                 }
                 placeholder="Select employment status"
-                options={EMPLOYEE_STATUSES.map((value) => ({
-                  value,
-                  label: formatEnumValue(value),
-                }))}
+                options={EMPLOYEE_STATUSES}
                 value={watch('employmentStatus')}
                 onChange={(value) => setValue('employmentStatus', value)}
                 onBlur={() => trigger('employmentStatus')}
@@ -361,10 +294,8 @@ const EmployeeForm = () => {
                   </>
                 }
                 placeholder="Select bank"
-                options={BANK_NAMES.map((bank) => ({
-                  value: bank,
-                  label: bank,
-                }))}
+                options={BANK_NAMES}
+                searchable
                 value={watch('personalBankName')}
                 onChange={(value) => setValue('personalBankName', value)}
                 onBlur={() => trigger('personalBankName')}
@@ -434,15 +365,13 @@ const EmployeeForm = () => {
                 error={errors.payoneerEmail?.message}
               />
 
-              <div className="md:col-span-2">
-                <Input
-                  id="payoneerCustomerId"
-                  label="Customer ID"
-                  placeholder="Enter Payoneer customer ID"
-                  {...register('payoneerCustomerId')}
-                  error={errors.payoneerCustomerId?.message}
-                />
-              </div>
+              <Input
+                id="payoneerCustomerId"
+                label="Customer ID"
+                placeholder="Enter Payoneer customer ID"
+                {...register('payoneerCustomerId')}
+                error={errors.payoneerCustomerId?.message}
+              />
             </div>
           </CardContent>
         </Card>

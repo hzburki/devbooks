@@ -6,11 +6,11 @@ import { Login, AuthCallback } from './public';
 // Protected routes (authentication required)
 import {
   Dashboard,
-  Employees,
-  AddEmployee,
+  EmployeesTable,
+  EmployeeForm,
   Invoices,
   Leaves,
-  AddLeave,
+  LeavesForm,
 } from './protected';
 
 // Components
@@ -36,7 +36,7 @@ export function App() {
           path="/employees"
           element={
             <ProtectedRoute>
-              <Employees />
+              <EmployeesTable />
             </ProtectedRoute>
           }
         />
@@ -44,7 +44,7 @@ export function App() {
           path="/employees/add"
           element={
             <ProtectedRoute>
-              <AddEmployee />
+              <EmployeeForm />
             </ProtectedRoute>
           }
         />
@@ -52,7 +52,7 @@ export function App() {
           path="/employees/edit/:id"
           element={
             <ProtectedRoute>
-              <AddEmployee />
+              <EmployeeForm />
             </ProtectedRoute>
           }
         />
@@ -76,7 +76,7 @@ export function App() {
           path="/leaves/add"
           element={
             <ProtectedRoute>
-              <AddLeave />
+              <LeavesForm />
             </ProtectedRoute>
           }
         />

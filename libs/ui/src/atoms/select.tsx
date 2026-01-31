@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from './utils';
 import { Label } from './label';
-import { ChevronDown, Check, X } from '../icons';
+import { ChevronDown, Check, X, Search } from '../icons';
 
 export type SelectOption = {
   value: string;
@@ -21,6 +21,7 @@ export type SelectProps = Omit<
   placeholder?: string;
   options: SelectOption[];
   disabled?: boolean;
+  searchable?: boolean;
 };
 
 const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
@@ -37,6 +38,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
       placeholder = 'Select an option',
       options,
       disabled,
+      searchable = false,
       ...props
     },
     ref,
@@ -45,8 +47,10 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
     const selectId = id || generatedId;
     const hasError = !!error;
     const [isOpen, setIsOpen] = React.useState(false);
+    const [searchQuery, setSearchQuery] = React.useState('');
     const selectRef = React.useRef<HTMLDivElement>(null);
     const buttonRef = React.useRef<HTMLButtonElement>(null);
+    const searchInputRef = React.useRef<HTMLInputElement>(null);
 
     // Combine refs
     React.useImperativeHandle(ref, () => buttonRef.current!);
@@ -54,6 +58,31 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
     const selectedOption = options.find((opt) => opt.value === value);
     const displayValue = selectedOption?.label || placeholder;
     const hasValue = !!value && value !== '';
+
+    // Filter options based on search query
+    const filteredOptions = React.useMemo(() => {
+      if (!searchable || !searchQuery.trim()) {
+        return options;
+      }
+      const query = searchQuery.toLowerCase();
+      return options.filter(
+        (opt) =>
+          opt.label.toLowerCase().includes(query) ||
+          opt.value.toLowerCase().includes(query),
+      );
+    }, [options, searchQuery, searchable]);
+
+    // Reset search when dropdown closes
+    React.useEffect(() => {
+      if (!isOpen) {
+        setSearchQuery('');
+      } else if (searchable && searchInputRef.current) {
+        // Focus search input when dropdown opens
+        setTimeout(() => {
+          searchInputRef.current?.focus();
+        }, 0);
+      }
+    }, [isOpen, searchable]);
 
     const handleClear = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -166,40 +195,69 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
         {isOpen && (
           <div
             role="listbox"
-            className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-input bg-popover shadow-md"
+            className="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-input bg-popover shadow-md"
           >
-            {options.filter((opt) => opt.value !== '').length === 0 ? (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
-                No options available
+            {searchable && (
+              <div className="border-b border-input p-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsOpen(false);
+                        buttonRef.current?.focus();
+                        onBlur?.();
+                      }
+                      // Prevent dropdown from closing when typing
+                      e.stopPropagation();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Search options..."
+                    className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
+                  />
+                </div>
               </div>
-            ) : (
-              options
-                .filter((opt) => opt.value !== '')
-                .map((option) => {
-                const isSelected = option.value === value;
-                return (
-                  <div
-                    key={option.value}
-                    role="option"
-                    aria-selected={isSelected}
-                    tabIndex={0}
-                    onClick={() => handleOptionClick(option.value)}
-                    onKeyDown={(e) => handleOptionKeyDown(e, option.value)}
-                    className={cn(
-                      'relative flex cursor-pointer select-none items-center px-3 py-2 text-sm outline-none transition-colors',
-                      isSelected
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-popover-foreground hover:bg-muted focus:bg-muted',
-                    )}
-                  >
-                    {isSelected && (
-                      <Check className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
-                    )}
-                    <span>{option.label}</span>
-                  </div>
-                );
-              })
             )}
+            <div className="max-h-60 overflow-auto">
+              {filteredOptions.filter((opt) => opt.value !== '').length === 0 ? (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  {searchQuery.trim()
+                    ? 'No options found'
+                    : 'No options available'}
+                </div>
+              ) : (
+                filteredOptions
+                  .filter((opt) => opt.value !== '')
+                  .map((option) => {
+                    const isSelected = option.value === value;
+                    return (
+                      <div
+                        key={option.value}
+                        role="option"
+                        aria-selected={isSelected}
+                        tabIndex={0}
+                        onClick={() => handleOptionClick(option.value)}
+                        onKeyDown={(e) => handleOptionKeyDown(e, option.value)}
+                        className={cn(
+                          'relative flex cursor-pointer select-none items-center px-3 py-2 text-sm outline-none transition-colors',
+                          isSelected
+                            ? 'bg-primary text-primary-foreground'
+                            : 'text-popover-foreground hover:bg-muted focus:bg-muted',
+                        )}
+                      >
+                        {isSelected && (
+                          <Check className="mr-2 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                        )}
+                        <span>{option.label}</span>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
           </div>
         )}
       </div>

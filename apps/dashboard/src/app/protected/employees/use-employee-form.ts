@@ -26,7 +26,7 @@ export type EmployeeFormData = {
   personalBankName: string;
   bankAccountTitle: string;
   iban: string;
-  swiftCode: string;
+  swiftCode?: string;
   documents?: Array<{ name: string; file: File }>;
   payoneerName?: string;
   payoneerEmail?: string;
@@ -62,7 +62,7 @@ const createEmployeeSchema = (isEditMode: boolean) => {
     personalBankName: yup.string().required('Bank name is required'),
     bankAccountTitle: yup.string().required('Account title is required'),
     iban: yup.string().required('IBAN is required'),
-    swiftCode: yup.string().required('Swift code is required'),
+    swiftCode: yup.string().optional(),
     payoneerName: yup.string().optional(),
     payoneerEmail: yup.string().email('Invalid email address').optional(),
     payoneerCustomerId: yup.string().optional(),
@@ -121,10 +121,10 @@ const mapEmployeeToFormData = (
     emergencyContactName: employee.emergency_contact_name || '',
     relationToEmergencyContact: employee.relation_to_emergency_contact || '',
     emergencyContactNumber: employee.emergency_contact_number || '',
-    personalBankName: employee.personal_bank_name,
-    bankAccountTitle: employee.bank_account_title,
-    iban: employee.iban,
-    swiftCode: employee.swift_code,
+    personalBankName: employee.personal_bank_name || '',
+    bankAccountTitle: employee.bank_account_title || '',
+    iban: employee.iban || '',
+    swiftCode: employee.swift_code || undefined,
     payoneerName: employee.payoneer_name || '',
     payoneerEmail: employee.payoneer_email || '',
     payoneerCustomerId: employee.payoneer_customer_id || '',
@@ -161,7 +161,7 @@ const mapFormDataToEmployeeData = (
     personal_bank_name: data.personalBankName,
     bank_account_title: data.bankAccountTitle,
     iban: data.iban,
-    swift_code: data.swiftCode,
+    swift_code: data.swiftCode || null,
     payoneer_name: data.payoneerName || null,
     payoneer_email: data.payoneerEmail || null,
     payoneer_customer_id: data.payoneerCustomerId || null,
@@ -189,11 +189,11 @@ export function useEmployeeForm(employeeId?: string) {
     isError: isEmployeeError,
   } = useQuery({
     queryKey: ['employee', employeeId],
-    queryFn: async () => {
+    queryFn: () => {
       if (!employeeId) {
         throw new Error('Employee ID is required');
       }
-      return await employeesService.getById(employeeId);
+      return employeesService.getById(employeeId);
     },
     enabled: isEditMode && !!employeeId,
     retry: false,
@@ -251,8 +251,12 @@ export function useEmployeeForm(employeeId?: string) {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (data: Parameters<typeof employeesService.update>[1]) =>
-      employeesService.update(employeeId!, data),
+    mutationFn: (data: Parameters<typeof employeesService.update>[1]) => {
+      if (!employeeId) {
+        throw new Error('Employee ID is required');
+      }
+      return employeesService.update(employeeId, data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['employees'] });
       queryClient.invalidateQueries({ queryKey: ['employee', employeeId] });
@@ -267,7 +271,8 @@ export function useEmployeeForm(employeeId?: string) {
       toast({
         variant: 'error',
         title: 'Error',
-        description: error.message || 'Failed to update employee. Please try again.',
+        description:
+          error.message || 'Failed to update employee. Please try again.',
       });
     },
   });
@@ -319,21 +324,6 @@ export function useEmployeeForm(employeeId?: string) {
     };
     setValue('documents', updated);
   };
-
-  // Handle query errors
-  useEffect(() => {
-    if (isEmployeeError && employeeError && isEditMode) {
-      console.error('Error loading employee:', employeeError);
-      toast({
-        variant: 'error',
-        title: 'Failed to load employee',
-        description:
-          employeeError instanceof Error
-            ? employeeError.message
-            : 'Failed to load employee data. Please try again.',
-      });
-    }
-  }, [isEmployeeError, employeeError, isEditMode, toast]);
 
   return {
     form,

@@ -8,20 +8,17 @@ import {
 } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
 import { employeesService, type Employee } from '../../../services';
-import { useToast, useDebounce } from '@devbooks/utils';
+import { useToast, useDebounce, DESIGNATIONS, CONTRACT_TYPES } from '@devbooks/utils';
 import { Users, UserPlus, Edit, FileText } from '@devbooks/ui';
-import { formatEnumValue } from '@devbooks/utils';
 import { useQuery } from '@tanstack/react-query';
 import { DeleteEmployee } from './delete-employee';
 
-// Helper function to format job type for display
-const formatJobType = (jobType: string): string => {
-  const typeMap: Record<string, string> = {
-    full_time: 'Full-time',
-    part_time: 'Part-time',
-    project_based: 'Project-based',
-  };
-  return typeMap[jobType] || formatEnumValue(jobType);
+// Helper function to get label from enum options
+const getLabelFromEnum = (
+  value: string,
+  enumOptions: Array<{ value: string; label: string }>,
+): string => {
+  return enumOptions.find((opt) => opt.value === value)?.label || value;
 };
 
 const Employees = () => {
@@ -73,7 +70,8 @@ const Employees = () => {
     },
     {
       header: 'Designation',
-      render: (employee) => formatEnumValue(employee.designations),
+      render: (employee) =>
+        getLabelFromEnum(employee.designations, DESIGNATIONS),
     },
     {
       header: 'Email',
@@ -87,7 +85,7 @@ const Employees = () => {
       header: 'Type',
       render: (employee) => (
         <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-          {formatJobType(employee.job_type)}
+          {getLabelFromEnum(employee.job_type, CONTRACT_TYPES)}
         </span>
       ),
     },
