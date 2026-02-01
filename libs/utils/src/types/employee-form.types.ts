@@ -25,7 +25,15 @@ export interface EmployeeFormData {
   bankAccountTitle: string;
   iban: string;
   swiftCode?: string;
-  documents?: Array<{ name: string; file: File }>;
+  documents?: Array<{
+    id?: string; // For existing documents (from employee_documents table)
+    name: string;
+    file?: File; // For new uploads (before upload completes)
+    filePath?: string; // For existing documents (from storage)
+    uploadProgress?: number; // 0-100 for upload progress
+    isUploading?: boolean; // Upload in progress
+    isDeleted?: boolean; // Track if marked for deletion
+  }>;
   payoneerName?: string;
   payoneerEmail?: string;
   payoneerCustomerId?: string;

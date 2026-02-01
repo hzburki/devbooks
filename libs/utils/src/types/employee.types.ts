@@ -72,12 +72,17 @@ export interface CreateEmployeeInput {
   nsave_bank_address?: string | null;
   nsave_recipient_address?: string | null;
   user_type: 'owner' | 'employee';
+  documentIdsToLink?: string[]; // IDs from employee_documents table to link
+  deletedDocuments?: string[]; // IDs from employee_documents table to unlink (set employee_id to NULL)
 }
 
 /**
  * Input type for updating an employee (all fields optional)
  */
-export type UpdateEmployeeInput = Partial<CreateEmployeeInput>;
+export type UpdateEmployeeInput = Partial<CreateEmployeeInput> & {
+  documentIdsToLink?: string[]; // IDs from employee_documents table to link
+  deletedDocuments?: string[]; // IDs from employee_documents table to unlink (set employee_id to NULL)
+};
 
 /**
  * Parameters for getting all employees with pagination

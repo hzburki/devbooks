@@ -9,6 +9,7 @@ export * from './common.types';
 // Employee types
 export * from './employee.types';
 export * from './employee-form.types';
+export * from './employee-document.types';
 
 // Future entity types can be added here:
 // export * from './leave.types';

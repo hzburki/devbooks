@@ -23,4 +23,7 @@ export {
   ChevronRight,
   Filter,
   Plus,
+  CheckCircle2,
+  XCircle,
+  Download,
 } from 'lucide-react';

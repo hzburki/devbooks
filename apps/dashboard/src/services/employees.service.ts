@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase/client';
 import { buildSearchOrQuery } from '@devbooks/utils';
+import { employeeDocumentsService } from './employee-documents.service';
 import type {
   Employee,
   CreateEmployeeInput,
@@ -22,15 +23,36 @@ export const employeesService = {
    * Create a new employee
    */
   async create(employee: CreateEmployeeInput): Promise<Employee> {
+    // Extract document IDs to link (don't send to employees table)
+    const { documentIdsToLink, ...employeeData } = employee;
+
+    const now = new Date().toISOString();
     const { data, error } = await supabase
       .from('employees')
-      .insert(employee)
+      .insert({
+        ...employeeData,
+        created_at: now,
+      })
       .select()
       .single();
 
     if (error) {
       console.error('Error creating employee:', error);
       throw new Error(`Failed to create employee: ${error.message}`);
+    }
+
+    // Link documents to employee if provided
+    if (documentIdsToLink && documentIdsToLink.length > 0) {
+      try {
+        await employeeDocumentsService.linkDocumentsToEmployee(
+          data.id,
+          documentIdsToLink,
+        );
+      } catch (docError) {
+        console.error('Error linking documents:', docError);
+        // Don't fail the employee creation if document linking fails
+        // The documents can be linked later
+      }
     }
 
     return data;
@@ -115,9 +137,12 @@ export const employeesService = {
    * Update employee
    */
   async update(id: string, updates: UpdateEmployeeInput): Promise<Employee> {
+    // Extract document-related fields (don't send to employees table)
+    const { documentIdsToLink, deletedDocuments, ...employeeUpdates } = updates;
+
     const { data, error } = await supabase
       .from('employees')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...employeeUpdates, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
@@ -127,6 +152,26 @@ export const employeesService = {
       throw new Error(`Failed to update employee: ${error.message}`);
     }
 
+    // Handle document linking/unlinking
+    try {
+      if (documentIdsToLink && documentIdsToLink.length > 0) {
+        await employeeDocumentsService.linkDocumentsToEmployee(
+          id,
+          documentIdsToLink,
+        );
+      }
+
+      // Unlink documents from employee (set employee_id to NULL) instead of soft deleting
+      if (deletedDocuments && deletedDocuments.length > 0) {
+        await employeeDocumentsService.unlinkDocumentsFromEmployee(
+          deletedDocuments,
+        );
+      }
+    } catch (docError) {
+      console.error('Error updating documents:', docError);
+      // Don't fail the employee update if document operations fail
+    }
+
     return data;
   },
 
@@ -134,14 +179,31 @@ export const employeesService = {
    * Soft delete employee
    */
   async delete(id: string): Promise<void> {
+    // Soft delete employee
+    const now = new Date().toISOString();
     const { error } = await supabase
       .from('employees')
-      .update({ deleted_at: new Date().toISOString() })
+      .update({
+        deleted_at: now,
+        updated_at: now,
+      })
       .eq('id', id);
 
     if (error) {
       console.error('Error deleting employee:', error);
       throw new Error(`Failed to delete employee: ${error.message}`);
+    }
+
+    // Soft delete all associated documents
+    try {
+      const documents = await employeeDocumentsService.getByEmployeeId(id);
+      if (documents.length > 0) {
+        const documentIds = documents.map((doc) => doc.id);
+        await employeeDocumentsService.softDeleteDocuments(documentIds);
+      }
+    } catch (docError) {
+      console.error('Error soft deleting employee documents:', docError);
+      // Don't fail the employee deletion if document deletion fails
     }
   },
 };

@@ -5,7 +5,7 @@ import * as yup from 'yup';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@devbooks/utils';
-import { employeesService } from '../../../services';
+import { employeesService, employeeDocumentsService } from '../../../services';
 import type {
   Employee,
   UpdateEmployeeInput,
@@ -46,31 +46,36 @@ const createEmployeeSchema = (isEditMode: boolean) => {
     nSaveSwiftCode: yup.string().optional(),
     nSaveBankAddress: yup.string().optional(),
     nSaveRecipientAddress: yup.string().optional(),
-    documents: isEditMode
-      ? yup
-          .array()
-          .of(
-            yup.object({
-              name: yup.string().optional(),
-              file: yup.mixed<File>().optional(),
-            }),
-          )
-          .optional()
-      : yup
-          .array()
-          .of(
-            yup.object({
-              name: yup.string().required('Document name is required'),
-              file: yup
-                .mixed<File>()
-                .required('Document file is required')
-                .test('file-required', 'Document file is required', (value) => {
-                  return value instanceof File && value.size > 0;
-                }),
-            }),
-          )
-          .min(1, 'At least one document is required')
-          .default([]),
+    documents: yup
+      .array()
+      .of(
+        yup.object({
+          id: yup.string().optional(),
+          name: yup.string().required('Document name is required'),
+          file: yup.mixed<File>().optional(),
+          filePath: yup.string().optional(),
+          uploadProgress: yup.number().optional(),
+          isUploading: yup.boolean().optional(),
+          isDeleted: yup.boolean().optional(),
+        }),
+      )
+      .test(
+        'at-least-one-document',
+        'At least one document is required',
+        function (value) {
+          if (!isEditMode) {
+            const validDocuments =
+              value?.filter(
+                (doc) =>
+                  !doc.isDeleted &&
+                  (doc.id || (doc.file instanceof File && doc.file.size > 0)),
+              ) || [];
+            return validDocuments.length > 0;
+          }
+          return true;
+        },
+      )
+      .default([]),
   };
 
   return yup.object(baseSchema).required();
@@ -108,7 +113,7 @@ const mapEmployeeToFormData = (
     nSaveSwiftCode: employee.nsave_swift_code || '',
     nSaveBankAddress: employee.nsave_bank_address || '',
     nSaveRecipientAddress: employee.nsave_recipient_address || '',
-    // Documents are optional when editing - don't populate them
+    // Documents will be loaded separately
     documents: [],
   };
 };
@@ -116,8 +121,44 @@ const mapEmployeeToFormData = (
 // Helper function to map form data (camelCase) to database schema (snake_case)
 const mapFormDataToEmployeeData = (
   data: EmployeeFormData,
+  isEditMode: boolean,
+  existingDocumentIds: Set<string> = new Set(),
 ): CreateEmployeeInput => {
-  return {
+  // Extract document IDs to link and documents to unlink
+  const documentIdsToLink: string[] = [];
+  const deletedDocumentsSet = new Set<string>();
+
+  // Track documents that are still in the form (not deleted)
+  const currentDocumentIds = new Set<string>();
+
+  if (data.documents) {
+    data.documents.forEach((doc) => {
+      if (doc.isDeleted && doc.id) {
+        // Document marked as deleted - unlink it
+        deletedDocumentsSet.add(doc.id);
+      } else if (doc.id && !doc.isDeleted) {
+        currentDocumentIds.add(doc.id);
+        // Only link documents that are newly uploaded (not already linked)
+        if (!existingDocumentIds.has(doc.id)) {
+          documentIdsToLink.push(doc.id);
+        }
+      }
+    });
+  }
+
+  // Also unlink documents that were previously linked but are no longer in the form
+  if (isEditMode && existingDocumentIds.size > 0) {
+    existingDocumentIds.forEach((docId) => {
+      if (!currentDocumentIds.has(docId)) {
+        // Document was previously linked but is no longer in the form - unlink it
+        deletedDocumentsSet.add(docId);
+      }
+    });
+  }
+
+  const deletedDocuments = Array.from(deletedDocumentsSet);
+
+  const employeeData: CreateEmployeeInput = {
     full_name: data.fullName,
     email: data.email,
     date_of_birth: data.dateOfBirth || null,
@@ -146,6 +187,22 @@ const mapFormDataToEmployeeData = (
     nsave_bank_address: data.nSaveBankAddress || null,
     nsave_recipient_address: data.nSaveRecipientAddress || null,
     user_type: 'employee' as const,
+  };
+
+  if (isEditMode) {
+    return {
+      ...employeeData,
+      documentIdsToLink:
+        documentIdsToLink.length > 0 ? documentIdsToLink : undefined,
+      deletedDocuments:
+        deletedDocuments.length > 0 ? deletedDocuments : undefined,
+    };
+  }
+
+  return {
+    ...employeeData,
+    documentIdsToLink:
+      documentIdsToLink.length > 0 ? documentIdsToLink : undefined,
   };
 };
 
@@ -182,15 +239,53 @@ export function useEmployeeForm(employeeId?: string) {
       documents: isEditMode
         ? []
         : [
-            { name: 'CNIC Front', file: new File([], '') },
-            { name: 'CNIC Back', file: new File([], '') },
-            { name: 'Resume', file: new File([], '') },
-            { name: 'Offer Letter', file: new File([], '') },
+            {
+              name: 'CNIC Front',
+              isUploading: false,
+              uploadProgress: 0,
+              isDeleted: false,
+            },
+            {
+              name: 'CNIC Back',
+              isUploading: false,
+              uploadProgress: 0,
+              isDeleted: false,
+            },
+            {
+              name: 'Resume',
+              isUploading: false,
+              uploadProgress: 0,
+              isDeleted: false,
+            },
+            {
+              name: 'Offer Letter',
+              isUploading: false,
+              uploadProgress: 0,
+              isDeleted: false,
+            },
           ],
     },
   });
 
   const { watch, setValue, reset, trigger } = form;
+
+  // Fetch existing documents when editing
+  const { data: existingDocuments, isLoading: isLoadingDocuments } = useQuery({
+    queryKey: ['employee-documents', employeeId],
+    queryFn: () => {
+      if (!employeeId) {
+        throw new Error('Employee ID is required');
+      }
+      return employeeDocumentsService.getByEmployeeId(employeeId);
+    },
+    enabled: isEditMode && !!employeeId,
+    retry: false,
+  });
+
+  // Track existing document IDs for linking logic
+  const existingDocumentIds = new Set(
+    existingDocuments?.map((doc) => doc.id) || [],
+  );
 
   // Populate form when employee data loads
   useEffect(() => {
@@ -199,6 +294,21 @@ export function useEmployeeForm(employeeId?: string) {
       reset(formData);
     }
   }, [employee, isEditMode, reset]);
+
+  // Populate documents when they load
+  useEffect(() => {
+    if (existingDocuments && isEditMode) {
+      const documentFormData = existingDocuments.map((doc) => ({
+        id: doc.id,
+        name: doc.name,
+        filePath: doc.file_path,
+        isDeleted: false,
+        isUploading: false,
+        uploadProgress: 0,
+      }));
+      setValue('documents', documentFormData);
+    }
+  }, [existingDocuments, isEditMode, setValue]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -251,7 +361,25 @@ export function useEmployeeForm(employeeId?: string) {
   });
 
   const onSubmit = async (data: EmployeeFormData) => {
-    const employeeData = mapFormDataToEmployeeData(data);
+    // Ensure all documents are uploaded before submitting
+    const documentsToUpload = data.documents?.filter(
+      (doc) => !doc.id && doc.file instanceof File && !doc.isDeleted,
+    );
+
+    if (documentsToUpload && documentsToUpload.length > 0) {
+      toast({
+        variant: 'error',
+        title: 'Upload in Progress',
+        description: 'Please wait for all documents to finish uploading.',
+      });
+      return;
+    }
+
+    const employeeData = mapFormDataToEmployeeData(
+      data,
+      isEditMode,
+      existingDocumentIds,
+    );
 
     if (isEditMode) {
       await updateMutation.mutateAsync(employeeData);
@@ -267,16 +395,34 @@ export function useEmployeeForm(employeeId?: string) {
     const currentDocuments = watch('documents') || [];
     setValue('documents', [
       ...currentDocuments,
-      { name: '', file: new File([], '') },
+      {
+        name: '',
+        isUploading: false,
+        uploadProgress: 0,
+        isDeleted: false,
+      },
     ]);
   };
 
   const removeDocument = (index: number) => {
     const currentDocuments = watch('documents') || [];
-    setValue(
-      'documents',
-      currentDocuments.filter((_, i) => i !== index),
-    );
+    const document = currentDocuments[index];
+
+    if (document?.id) {
+      // Existing document - mark as deleted
+      const updated = [...currentDocuments];
+      updated[index] = {
+        ...updated[index],
+        isDeleted: true,
+      };
+      setValue('documents', updated);
+    } else {
+      // New document - remove from form
+      setValue(
+        'documents',
+        currentDocuments.filter((_, i) => i !== index),
+      );
+    }
     trigger('documents');
   };
 
@@ -288,21 +434,98 @@ export function useEmployeeForm(employeeId?: string) {
     trigger(`documents.${index}.name`);
   };
 
-  const updateDocumentFile = (index: number, file: File | undefined) => {
+  const updateDocumentFile = async (index: number, file: File | undefined) => {
+    if (!file) {
+      return;
+    }
+
     const currentDocuments = watch('documents') || [];
+    const document = currentDocuments[index];
+
+    if (!document?.name) {
+      toast({
+        variant: 'error',
+        title: 'Document Name Required',
+        description: 'Please enter a document name before uploading.',
+      });
+      return;
+    }
+
+    // Set uploading state
     const updated = [...currentDocuments];
     updated[index] = {
       ...updated[index],
-      file: file || new File([], ''),
+      file,
+      isUploading: true,
+      uploadProgress: 0,
     };
     setValue('documents', updated);
+
+    try {
+      // Upload file immediately
+      const uploadedDocument = await employeeDocumentsService.uploadDocument(
+        file,
+        document.name,
+        (progress) => {
+          // Update progress
+          const currentDocs = watch('documents') || [];
+          const updatedDocs = [...currentDocs];
+          if (updatedDocs[index]) {
+            updatedDocs[index] = {
+              ...updatedDocs[index],
+              uploadProgress: progress,
+            };
+            setValue('documents', updatedDocs);
+          }
+        },
+      );
+
+      // Update form with document ID and file path
+      const finalDocs = watch('documents') || [];
+      const finalUpdated = [...finalDocs];
+      finalUpdated[index] = {
+        ...finalUpdated[index],
+        id: uploadedDocument.id,
+        filePath: uploadedDocument.file_path,
+        isUploading: false,
+        uploadProgress: 100,
+      };
+      setValue('documents', finalUpdated);
+
+      toast({
+        variant: 'success',
+        title: 'Document Uploaded',
+        description: `${document.name} has been uploaded successfully.`,
+      });
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      // Reset upload state on error
+      const errorDocs = watch('documents') || [];
+      const errorUpdated = [...errorDocs];
+      errorUpdated[index] = {
+        ...errorUpdated[index],
+        file: undefined,
+        isUploading: false,
+        uploadProgress: 0,
+      };
+      setValue('documents', errorUpdated);
+
+      toast({
+        variant: 'error',
+        title: 'Upload Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload document. Please try again.',
+      });
+    }
   };
 
   return {
     form,
     onSubmit,
     isEditMode,
-    isLoadingEmployee,
+    isLoadingEmployee: isLoadingEmployee || isLoadingDocuments,
     employeeError: isEmployeeError ? employeeError : null,
     isSubmitting:
       form.formState.isSubmitting ||
