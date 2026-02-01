@@ -468,8 +468,29 @@ const EmployeeForm = () => {
                 return (
                   <div
                     key={document.id || `new-${index}`}
-                    className="flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-start"
+                    className="relative flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-start"
                   >
+                    {/* Loading Overlay */}
+                    {isUploading && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
+                        <div className="w-full max-w-md space-y-2 px-4">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Uploading...
+                            </span>
+                            <span className="text-muted-foreground">
+                              {uploadProgress}%
+                            </span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full bg-primary transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex-1 space-y-2">
                       <Input
                         id={`document-name-${index}`}
@@ -494,43 +515,8 @@ const EmployeeForm = () => {
                         }
                         disabled={isUploading}
                       />
-                      {isUploading && (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Uploading...
-                            </span>
-                            <span className="text-muted-foreground">
-                              {uploadProgress}%
-                            </span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full bg-primary transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
-                        </div>
-                      )}
-                      {hasFile && !isUploading && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <CheckCircle2 className="h-4 w-4 text-success" />
-                          <span>Document uploaded</span>
-                          {fileUrl && (
-                            <a
-                              href={fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ml-2 flex items-center gap-1 text-primary hover:underline"
-                            >
-                              <Download className="h-3 w-3" />
-                              View
-                            </a>
-                          )}
-                        </div>
-                      )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-2">
                       {!hasFile ? (
                         <Input
                           id={`document-file-${index}`}
@@ -557,10 +543,29 @@ const EmployeeForm = () => {
                           }
                         />
                       ) : (
-                        <div className="pt-7">
-                          <div className="text-sm text-muted-foreground">
-                            File uploaded
+                        <div>
+                          <div className="pt-7">
+                            <div className="text-sm text-muted-foreground">
+                              File uploaded
+                            </div>
                           </div>
+                          {hasFile && !isUploading && (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <CheckCircle2 className="h-4 w-4 text-success" />
+                              <span>Document uploaded</span>
+                              {fileUrl && (
+                                <a
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ml-2 flex items-center gap-1 text-primary hover:underline"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  View
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
