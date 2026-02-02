@@ -80,6 +80,14 @@ export function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/leaves/edit/:id"
+          element={
+            <ProtectedRoute>
+              <LeavesForm />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
       <Toaster />
     </>

@@ -10,6 +10,9 @@ export * from './atoms/dialog';
 export * from './atoms/utils';
 export * from './atoms/popover';
 export * from './atoms/date-picker';
+export * from './atoms/switch';
+// Export Dialog component (overrides Dialog primitive - use DialogPrimitive from './atoms/dialog' if needed)
+export { Dialog, type DialogProps } from './atoms/confirm-dialog';
 // Export Calendar component explicitly to avoid conflict with Calendar icon
 export { Calendar, CalendarDayButton } from './atoms/calendar';
 export type { CalendarProps } from './atoms/calendar';

@@ -1,84 +1,55 @@
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import { useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardPage } from '@devbooks/components';
-import { Button } from '@devbooks/ui';
-import { Input } from '@devbooks/ui';
-import { Label } from '@devbooks/ui';
-import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
+import {
+  Button,
+  Label,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Select,
+  DatePicker,
+  TextArea,
+  Switch,
+} from '@devbooks/ui';
+import { CalendarPlus, ArrowLeft, Edit } from '@devbooks/ui';
 import { cn } from '@devbooks/ui';
-import { useToast } from '@devbooks/utils';
-import { CalendarPlus, ArrowLeft } from 'lucide-react';
-
-type LeaveFormData = {
-  employeeId: string;
-  leaveType: string;
-  startDate: string;
-  endDate: string;
-  reason: string;
-};
-
-const leaveSchema = yup
-  .object({
-    employeeId: yup.string().required('Please select an employee'),
-    leaveType: yup.string().required('Please select a leave type'),
-    startDate: yup.string().required('Start date is required'),
-    endDate: yup
-      .string()
-      .required('End date is required')
-      .test(
-        'is-after-start',
-        'End date must be on or after start date',
-        function (value) {
-          const { startDate } = this.parent;
-          if (!startDate || !value) return true;
-          return new Date(value) >= new Date(startDate);
-        }
-      ),
-    reason: yup
-      .string()
-      .required('Reason is required')
-      .min(10, 'Please provide at least 10 characters'),
-  })
-  .required();
-
-// Mock employees - replace with actual data
-const employees = [
-  { id: '1', name: 'John Doe' },
-  { id: '2', name: 'Jane Smith' },
-  { id: '3', name: 'Ahmed Khan' },
-  { id: '4', name: 'Sarah Ali' },
-  { id: '5', name: 'Michael Brown' },
-  { id: '6', name: 'Emily Johnson' },
-];
+import { format } from 'date-fns';
+import { useLeaveForm } from './use-leave-form';
 
 const leaveTypes = [
-  { value: 'sick', label: 'Sick Leave', description: 'Medical or health-related absence' },
-  { value: 'vacation', label: 'Vacation', description: 'Planned time off' },
-  { value: 'personal', label: 'Personal Leave', description: 'Personal matters' },
-  { value: 'emergency', label: 'Emergency Leave', description: 'Urgent unforeseen circumstances' },
-  { value: 'maternity', label: 'Maternity Leave', description: 'Maternity-related leave' },
-  { value: 'paternity', label: 'Paternity Leave', description: 'Paternity-related leave' },
-  { value: 'bereavement', label: 'Bereavement', description: 'Loss of a family member' },
-  { value: 'unpaid', label: 'Unpaid Leave', description: 'Leave without pay' },
+  { value: 'casual', label: 'Casual Leave' },
+  { value: 'sick', label: 'Sick Leave' },
+  { value: 'parental', label: 'Parental Leave' },
+  { value: 'other', label: 'Other' },
 ];
 
-const AddLeave = () => {
+const LeaveForm = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
+
+  const {
+    form,
+    onSubmit,
+    isEditMode,
+    isLoadingLeaveRequest,
+    leaveRequestError,
+    isSubmitting,
+    employees,
+  } = useLeaveForm(id);
+
   const {
     register,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting },
-  } = useForm<LeaveFormData>({
-    resolver: yupResolver(leaveSchema),
-  });
+    setValue,
+    formState: { errors },
+  } = form;
 
   const startDate = watch('startDate');
   const endDate = watch('endDate');
-  const selectedLeaveType = watch('leaveType');
+  const partialLeave = watch('partialLeave');
+  const deadlineExtended = watch('deadlineExtended');
 
   // Calculate number of days
   const calculateDays = () => {
@@ -93,23 +64,60 @@ const AddLeave = () => {
 
   const numberOfDays = calculateDays();
 
-  const onSubmit = async (data: LeaveFormData) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Show loading state when fetching leave request data in edit mode
+  if (isEditMode && isLoadingLeaveRequest) {
+    return (
+      <DashboardPage
+        icon={Edit}
+        title="Edit Leave Request"
+        description="Loading leave request data..."
+      >
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </DashboardPage>
+    );
+  }
 
-    toast({
-      variant: 'success',
-      title: 'Leave Request Submitted',
-      description: `Your ${numberOfDays}-day leave request has been submitted for approval.`,
-    });
+  // Show error state if leave request data failed to load
+  if (isEditMode && leaveRequestError) {
+    return (
+      <DashboardPage
+        icon={Edit}
+        title="Edit Leave Request"
+        description="Error loading leave request data"
+      >
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="mb-4 text-center text-destructive">
+            {leaveRequestError instanceof Error
+              ? leaveRequestError.message
+              : 'Failed to load leave request data. Please try again.'}
+          </p>
+          <Button onClick={() => navigate('/leaves')} variant="outline">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Leaves
+          </Button>
+        </div>
+      </DashboardPage>
+    );
+  }
 
-    navigate('/leaves');
-  };
+  // Convert employees to Select options
+  const employeeOptions = employees.map((emp) => ({
+    value: emp.id,
+    label: emp.full_name,
+  }));
 
   return (
     <DashboardPage
-      icon={CalendarPlus}
-      title="Request Leave"
-      description="Submit a new leave request"
+      icon={isEditMode ? Edit : CalendarPlus}
+      title={isEditMode ? 'Edit Leave Request' : 'Request Leave'}
+      description={
+        isEditMode
+          ? 'Update leave request details below'
+          : 'Submit a new leave request'
+      }
+      onBack={() => navigate('/leaves')}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Employee & Leave Type */}
@@ -120,67 +128,41 @@ const AddLeave = () => {
           <CardContent className="space-y-6">
             {/* Employee Selection */}
             <div className="space-y-2">
-              <Label htmlFor="employeeId">
-                Employee <span className="text-destructive">*</span>
-              </Label>
-              <select
+              <Select
+                label={
+                  <>
+                    Employee <span className="text-destructive">*</span>
+                  </>
+                }
                 id="employeeId"
-                {...register('employeeId')}
-                className={cn(
-                  'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                  errors.employeeId && 'border-destructive'
-                )}
-              >
-                <option value="">Select an employee</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </option>
-                ))}
-              </select>
-              {errors.employeeId && (
-                <p className="text-sm text-destructive">
-                  {errors.employeeId.message}
-                </p>
-              )}
+                value={watch('employeeId')}
+                onChange={(value) => setValue('employeeId', value)}
+                options={employeeOptions}
+                placeholder="Select an employee"
+                error={errors.employeeId?.message}
+              />
             </div>
 
             {/* Leave Type Selection */}
-            <div className="space-y-3">
-              <Label>
-                Leave Type <span className="text-destructive">*</span>
-              </Label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {leaveTypes.map((type) => (
-                  <label
-                    key={type.value}
-                    className={cn(
-                      'flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all hover:bg-muted/50',
-                      selectedLeaveType === type.value &&
-                        'border-primary bg-primary/5 ring-1 ring-primary',
-                      errors.leaveType && 'border-destructive/50'
-                    )}
-                  >
-                    <input
-                      type="radio"
-                      value={type.value}
-                      {...register('leaveType')}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-medium">{type.label}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {type.description}
-                      </p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-              {errors.leaveType && (
-                <p className="text-sm text-destructive">
-                  {errors.leaveType.message}
-                </p>
-              )}
+            <div className="space-y-2">
+              <Select
+                label={
+                  <>
+                    Leave Type <span className="text-destructive">*</span>
+                  </>
+                }
+                id="leaveType"
+                value={watch('leaveType')}
+                onChange={(value) =>
+                  setValue(
+                    'leaveType',
+                    value as 'casual' | 'sick' | 'parental' | 'other',
+                  )
+                }
+                options={leaveTypes}
+                placeholder="Select a leave type"
+                error={errors.leaveType?.message}
+              />
             </div>
           </CardContent>
         </Card>
@@ -193,38 +175,32 @@ const AddLeave = () => {
           <CardContent>
             <div className="grid gap-6 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="startDate">
-                  Start Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
+                <DatePicker
+                  label={
+                    <>
+                      Start Date <span className="text-destructive">*</span>
+                    </>
+                  }
                   id="startDate"
-                  type="date"
-                  {...register('startDate')}
-                  className={cn(errors.startDate && 'border-destructive')}
+                  value={startDate}
+                  onChange={(value) => setValue('startDate', value || '')}
+                  error={errors.startDate?.message}
                 />
-                {errors.startDate && (
-                  <p className="text-sm text-destructive">
-                    {errors.startDate.message}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="endDate">
-                  End Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
+                <DatePicker
+                  label={
+                    <>
+                      End Date <span className="text-destructive">*</span>
+                    </>
+                  }
                   id="endDate"
-                  type="date"
-                  min={startDate || undefined}
-                  {...register('endDate')}
-                  className={cn(errors.endDate && 'border-destructive')}
+                  value={endDate}
+                  onChange={(value) => setValue('endDate', value || '')}
+                  error={errors.endDate?.message}
+                  fromYear={new Date(startDate || new Date()).getFullYear()}
                 />
-                {errors.endDate && (
-                  <p className="text-sm text-destructive">
-                    {errors.endDate.message}
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -234,7 +210,7 @@ const AddLeave = () => {
                     'flex h-10 items-center rounded-md border bg-muted px-3 text-sm font-medium',
                     numberOfDays && numberOfDays > 0
                       ? 'text-foreground'
-                      : 'text-muted-foreground'
+                      : 'text-muted-foreground',
                   )}
                 >
                   {numberOfDays && numberOfDays > 0
@@ -253,26 +229,43 @@ const AddLeave = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              <Label htmlFor="reason">
-                Please provide a reason for your leave request{' '}
-                <span className="text-destructive">*</span>
-              </Label>
-              <textarea
+              <TextArea
+                label={
+                  <>
+                    Please provide a reason for your leave request{' '}
+                    <span className="text-destructive">*</span>
+                  </>
+                }
                 id="reason"
-                rows={4}
                 placeholder="Describe the reason for your leave request..."
                 {...register('reason')}
-                className={cn(
-                  'flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                  errors.reason && 'border-destructive'
-                )}
+                error={errors.reason?.message}
+                rows={4}
               />
-              {errors.reason && (
-                <p className="text-sm text-destructive">
-                  {errors.reason.message}
-                </p>
-              )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Options */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Options</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Switch
+              id="partialLeave"
+              checked={partialLeave}
+              onCheckedChange={(checked) => setValue('partialLeave', checked)}
+              label="Partial Leave"
+            />
+            <Switch
+              id="deadlineExtended"
+              checked={deadlineExtended}
+              onCheckedChange={(checked) =>
+                setValue('deadlineExtended', checked)
+              }
+              label="Deadline Extended"
+            />
           </CardContent>
         </Card>
 
@@ -285,17 +278,8 @@ const AddLeave = () => {
                   <p className="font-medium">Leave Summary</p>
                   <p className="text-sm text-muted-foreground">
                     {numberOfDays} day{numberOfDays > 1 ? 's' : ''} from{' '}
-                    {new Date(startDate).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}{' '}
-                    to{' '}
-                    {new Date(endDate).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
+                    {format(new Date(startDate), 'EEE, MMM d')} to{' '}
+                    {format(new Date(endDate), 'EEE, MMM d')}
                   </p>
                 </div>
               </div>
@@ -314,7 +298,11 @@ const AddLeave = () => {
             Cancel
           </Button>
           <Button type="submit" variant="gradient" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Submit Request'}
+            {isSubmitting
+              ? 'Submitting...'
+              : isEditMode
+                ? 'Update Request'
+                : 'Submit Request'}
           </Button>
         </div>
       </form>
@@ -322,4 +310,4 @@ const AddLeave = () => {
   );
 };
 
-export default AddLeave;
+export default LeaveForm;

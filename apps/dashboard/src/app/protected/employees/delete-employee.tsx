@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button, Trash2 } from '@devbooks/ui';
-import { ConfirmationDialog } from '@devbooks/components';
+import { Button, Trash2, Dialog } from '@devbooks/ui';
 import { employeesService } from '../../../services';
 import type { Employee } from '../../../../../../libs/utils/src/types';
 import { useToast } from '@devbooks/utils';
@@ -60,7 +59,7 @@ export function DeleteEmployee({ employee }: DeleteEmployeeProps) {
         <span className="sr-only">Delete</span>
       </Button>
 
-      <ConfirmationDialog
+      <Dialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Delete Employee"
