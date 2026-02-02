@@ -25,10 +25,11 @@ This creates a folder called supabase/migrations and adds a file containing the 
 
 Step A: Build in Dashboard Go to the Supabase UI and add your new columns, tables, or Enums.
 
-Step B: Pull the change In your terminayl, run:
+Step B: Pull the change In your terminal, run:
 
-npx supabase db pull "commit_message"
-This creates a new timestamped migration file in your code that represents only the changes you just made.
+npx supabase db pull --schema public "commit_message"
+This pulls the public schema which has your changes and ignores the rest of the changes which may have been caused by Supabase itself.
+It also creates a new timestamped migration file in your code that represents only the changes you just made.
 
 Step C: Git Commit git add .
 
