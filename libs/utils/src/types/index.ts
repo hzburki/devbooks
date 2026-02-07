@@ -14,5 +14,8 @@ export * from './employee-document.types';
 // Leave types
 export * from './leave.types';
 
+// Medical benefits types
+export * from './medical-benefits.types';
+
 // Future entity types can be added here:
 // export * from './invoice.types';

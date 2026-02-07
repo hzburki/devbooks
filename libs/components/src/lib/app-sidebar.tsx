@@ -8,6 +8,8 @@ import {
   Building2,
   Menu,
   X,
+  Heart,
+  Package,
 } from '@devbooks/ui';
 import { cn } from '@devbooks/ui';
 import { Button } from '@devbooks/ui';
@@ -15,10 +17,12 @@ import { Sheet, SheetContent, SheetTrigger } from '@devbooks/ui';
 import { useState } from 'react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Employees', href: '/employees', icon: Users },
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Leaves', href: '/leaves', icon: CalendarDays },
+  { name: 'Medical', href: '/medical', icon: Heart },
+  { name: 'Inventory', href: '/inventory', icon: Package },
 ];
 
 interface SidebarContentProps {

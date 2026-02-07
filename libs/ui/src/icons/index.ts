@@ -28,4 +28,6 @@ export {
   Download,
   CalendarPlus,
   Calendar,
+  Heart,
+  Package,
 } from 'lucide-react';

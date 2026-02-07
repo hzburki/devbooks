@@ -11,6 +11,9 @@ import {
   Invoices,
   Leaves,
   LeavesForm,
+  Medical,
+  MedicalClaimForm,
+  Inventory,
 } from './protected';
 
 // Components
@@ -26,6 +29,14 @@ export function App() {
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route
           path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/overview"
           element={
             <ProtectedRoute>
               <Dashboard />
@@ -85,6 +96,38 @@ export function App() {
           element={
             <ProtectedRoute>
               <LeavesForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/medical"
+          element={
+            <ProtectedRoute>
+              <Medical />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/medical/add"
+          element={
+            <ProtectedRoute>
+              <MedicalClaimForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/medical/edit/:id"
+          element={
+            <ProtectedRoute>
+              <MedicalClaimForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/inventory"
+          element={
+            <ProtectedRoute>
+              <Inventory />
             </ProtectedRoute>
           }
         />
