@@ -105,7 +105,7 @@ export interface DocumentUploadProps<TFieldValues = any> {
 
   /**
    * Optional accept attribute for file input
-   * @default "*/*"
+   * Defaults to all file types
    */
   accept?: string;
 
