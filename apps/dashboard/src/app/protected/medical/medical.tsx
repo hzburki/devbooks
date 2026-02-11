@@ -14,10 +14,7 @@ import { useSignOut } from '../../../lib/auth-handler';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@devbooks/utils';
 import { medicalBenefitsService } from '../../../services';
-import type {
-  MedicalBenefitRecord,
-  EmployeeLimitSummary,
-} from '@devbooks/utils';
+import type { MedicalBenefitRecord } from '@devbooks/utils';
 import { format } from 'date-fns';
 
 const currentYear = new Date().getFullYear();
@@ -64,24 +61,12 @@ const Medical = () => {
       }),
   });
 
-  // Fetch employee limit summaries
-  const {
-    data: limitSummaries,
-    error: limitsError,
-    isLoading: isLoadingLimits,
-  } = useQuery({
-    queryKey: ['employee-medical-limits', selectedYear],
-    queryFn: () =>
-      medicalBenefitsService.getAllEmployeeLimitSummaries(selectedYear),
-  });
-
   // Update payment status mutation
   const updatePaymentMutation = useMutation({
     mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
       medicalBenefitsService.updatePaymentStatus(id, paid),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medical-benefit-records'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-medical-limits'] });
       toast({
         variant: 'success',
         title: 'Payment Status Updated',
@@ -102,7 +87,6 @@ const Medical = () => {
     mutationFn: (id: string) => medicalBenefitsService.deleteRecord(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['medical-benefit-records'] });
-      queryClient.invalidateQueries({ queryKey: ['employee-medical-limits'] });
       toast({
         variant: 'success',
         title: 'Claim Deleted',
@@ -127,16 +111,6 @@ const Medical = () => {
       });
     }
   }, [recordsError, toast]);
-
-  useEffect(() => {
-    if (limitsError) {
-      toast({
-        variant: 'error',
-        title: 'Error Loading Limits',
-        description: limitsError.message,
-      });
-    }
-  }, [limitsError, toast]);
 
   const records: MedicalBenefitRecord[] =
     recordsResponse?.records || [];
@@ -265,72 +239,6 @@ const Medical = () => {
             Add Medical Claim
           </Button>
         </div>
-
-        {/* Employee Limits Summary */}
-        {!isLoadingLimits && limitSummaries && limitSummaries.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Employee Limits Summary ({selectedYear})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {limitSummaries.map((summary) => (
-                  <div
-                    key={summary.employee_id}
-                    className="rounded-lg border bg-card p-4"
-                  >
-                    <div className="mb-3 flex items-center justify-between">
-                      <h3 className="font-semibold">{summary.employee_name}</h3>
-                      <div className="text-right">
-                        <div className="text-sm text-muted-foreground">
-                          Total Used
-                        </div>
-                        <div className="text-lg font-bold">
-                          Rs. {summary.total_used.toLocaleString()} / Rs.{' '}
-                          {summary.total_limit.toLocaleString()}
-                        </div>
-                        <div
-                          className={`text-sm font-medium ${
-                            summary.remaining < summary.total_limit * 0.1
-                              ? 'text-destructive'
-                              : summary.remaining < summary.total_limit * 0.3
-                                ? 'text-warning'
-                                : 'text-success'
-                          }`}
-                        >
-                          Remaining: Rs. {summary.remaining.toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                    {summary.category_breakdown.length > 0 && (
-                      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                        {summary.category_breakdown.map((category) => (
-                          <div
-                            key={category.category}
-                            className="rounded border bg-muted/50 p-2 text-sm"
-                          >
-                            <div className="font-medium">
-                              {medicalCategoriesLabels[category.category] ||
-                                category.category}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Rs. {category.used.toLocaleString()} / Rs.{' '}
-                              {category.limit.toLocaleString()}
-                            </div>
-                            <div className="text-xs font-medium text-muted-foreground">
-                              Remaining: Rs.{' '}
-                              {category.remaining.toLocaleString()}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Claims Table */}
         <Card>
