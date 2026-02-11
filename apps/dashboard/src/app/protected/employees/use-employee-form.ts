@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,8 +10,8 @@ import type {
   Employee,
   UpdateEmployeeInput,
   CreateEmployeeInput,
-} from '../../../../../../libs/utils/src/types';
-import type { EmployeeFormData } from '../../../../../../libs/utils/src/types';
+} from '@devbooks/utils';
+import type { EmployeeFormData } from '@devbooks/utils';
 
 // Create schema - documents are required for new employees
 const createEmployeeSchema = (isEditMode: boolean) => {
@@ -206,11 +206,44 @@ const mapFormDataToEmployeeData = (
   };
 };
 
+// Default values for create mode
+const getCreateModeDefaults = (): Partial<EmployeeFormData> => ({
+  jobType: 'full_time',
+  employmentStatus: 'probation',
+  documents: [
+    {
+      name: 'CNIC Front',
+      isUploading: false,
+      uploadProgress: 0,
+      isDeleted: false,
+    },
+    {
+      name: 'CNIC Back',
+      isUploading: false,
+      uploadProgress: 0,
+      isDeleted: false,
+    },
+    {
+      name: 'Resume',
+      isUploading: false,
+      uploadProgress: 0,
+      isDeleted: false,
+    },
+    {
+      name: 'Offer Letter',
+      isUploading: false,
+      uploadProgress: 0,
+      isDeleted: false,
+    },
+  ],
+});
+
 export function useEmployeeForm(employeeId?: string) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const isEditMode = !!employeeId;
+  const previousEmployeeIdRef = useRef<string | undefined>(employeeId);
 
   // Fetch employee data if editing
   const {
@@ -233,41 +266,10 @@ export function useEmployeeForm(employeeId?: string) {
   const form = useForm<EmployeeFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: yupResolver(createEmployeeSchema(isEditMode)) as any,
-    defaultValues: {
-      jobType: 'full_time',
-      employmentStatus: 'probation',
-      documents: isEditMode
-        ? []
-        : [
-            {
-              name: 'CNIC Front',
-              isUploading: false,
-              uploadProgress: 0,
-              isDeleted: false,
-            },
-            {
-              name: 'CNIC Back',
-              isUploading: false,
-              uploadProgress: 0,
-              isDeleted: false,
-            },
-            {
-              name: 'Resume',
-              isUploading: false,
-              uploadProgress: 0,
-              isDeleted: false,
-            },
-            {
-              name: 'Offer Letter',
-              isUploading: false,
-              uploadProgress: 0,
-              isDeleted: false,
-            },
-          ],
-    },
+    defaultValues: isEditMode ? { documents: [] } : getCreateModeDefaults(),
   });
 
-  const { watch, setValue, reset, trigger } = form;
+  const { watch, setValue, reset, trigger, getValues } = form;
 
   // Fetch existing documents when editing
   const { data: existingDocuments, isLoading: isLoadingDocuments } = useQuery({
@@ -310,11 +312,55 @@ export function useEmployeeForm(employeeId?: string) {
     }
   }, [existingDocuments, isEditMode, setValue]);
 
+  // Reset form when switching from edit to create mode (when employeeId changes from defined to undefined)
+  useEffect(() => {
+    const wasEditMode = previousEmployeeIdRef.current !== undefined;
+    const isNowCreateMode = !isEditMode;
+
+    // Only reset if we're switching FROM edit mode TO create mode
+    if (wasEditMode && isNowCreateMode) {
+      // Reset to create mode defaults - ensure documents are properly set
+      const defaults = getCreateModeDefaults();
+      reset(defaults);
+    }
+
+    // Update the ref for next comparison
+    previousEmployeeIdRef.current = employeeId;
+  }, [employeeId, isEditMode, reset]);
+
+  // Ensure create mode always has default documents when switching to create mode
+  useEffect(() => {
+    if (isEditMode) {
+      return;
+    }
+
+    // Small delay to ensure form is ready, then check and set defaults if needed
+    const timeoutId = setTimeout(() => {
+      const currentDocuments = getValues('documents');
+      // If documents are empty or undefined, set defaults
+      if (!currentDocuments || currentDocuments.length === 0) {
+        const defaults = getCreateModeDefaults();
+        setValue('documents', defaults.documents || [], {
+          shouldValidate: false,
+        });
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [isEditMode, setValue, getValues]);
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: CreateEmployeeInput) => employeesService.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
+    onSuccess: async (newEmployee: Employee) => {
+      // Invalidate employees list
+      await queryClient.invalidateQueries({ queryKey: ['employees'] });
+      // Remove documents query from cache to force fresh fetch when edit form opens
+      queryClient.removeQueries({
+        queryKey: ['employee-documents', newEmployee.id],
+      });
+      // Reset form to defaults before navigation
+      reset(getCreateModeDefaults());
       toast({
         variant: 'success',
         title: 'Employee Added',
@@ -340,9 +386,17 @@ export function useEmployeeForm(employeeId?: string) {
       }
       return employeesService.update(employeeId, data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['employees'] });
-      queryClient.invalidateQueries({ queryKey: ['employee', employeeId] });
+    onSuccess: async () => {
+      // Wait for all cache invalidations to complete before navigating
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['employees'] }),
+        queryClient.invalidateQueries({ queryKey: ['employee', employeeId] }),
+        queryClient.invalidateQueries({
+          queryKey: ['employee-documents', employeeId],
+        }),
+      ]);
+      // Reset form to defaults before navigation
+      reset(getCreateModeDefaults());
       toast({
         variant: 'success',
         title: 'Employee Updated',

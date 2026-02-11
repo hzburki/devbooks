@@ -1,23 +1,16 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { DashboardPage } from '@devbooks/components';
+import { DashboardPage, DocumentUpload } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
 import { Input, TextArea, Select, DatePicker } from '@devbooks/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@devbooks/ui';
-import {
-  UserPlus,
-  Edit,
-  ArrowLeft,
-  Trash2,
-  Plus,
-  CheckCircle2,
-  Download,
-} from '@devbooks/ui';
+import { UserPlus, Edit, ArrowLeft } from '@devbooks/ui';
 import { employeeDocumentsService } from '../../../services';
 import {
   DESIGNATIONS,
   CONTRACT_TYPES,
   EMPLOYEE_STATUSES,
   BANK_NAMES,
+  type EmployeeFormData,
 } from '@devbooks/utils';
 import { useEmployeeForm } from './use-employee-form';
 
@@ -453,154 +446,17 @@ const EmployeeForm = () => {
             <CardTitle>Documents</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-4">
-              {documents.map((document, index) => {
-                if (document.isDeleted) {
-                  return null;
-                }
-                const isUploading = document.isUploading;
-                const uploadProgress = document.uploadProgress || 0;
-                const hasFile = document.id || document.filePath;
-                const fileUrl = document.filePath
-                  ? employeeDocumentsService.getPublicUrl(document.filePath)
-                  : null;
-
-                return (
-                  <div
-                    key={document.id || `new-${index}`}
-                    className="relative flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-start"
-                  >
-                    {/* Loading Overlay */}
-                    {isUploading && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
-                        <div className="w-full max-w-md space-y-2 px-4">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Uploading...
-                            </span>
-                            <span className="text-muted-foreground">
-                              {uploadProgress}%
-                            </span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full bg-primary transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex-1 space-y-2">
-                      <Input
-                        id={`document-name-${index}`}
-                        label={
-                          index === 0 ? (
-                            <>
-                              Document Name{' '}
-                              <span className="text-destructive">*</span>
-                            </>
-                          ) : (
-                            'Document Name'
-                          )
-                        }
-                        placeholder="Enter document name"
-                        value={document.name || ''}
-                        onChange={(e) =>
-                          updateDocumentName(index, e.target.value)
-                        }
-                        onBlur={() => trigger(`documents.${index}.name`)}
-                        error={
-                          errors.documents?.[index]?.name?.message as string
-                        }
-                        disabled={isUploading}
-                      />
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      {!hasFile ? (
-                        <Input
-                          id={`document-file-${index}`}
-                          type="file"
-                          label={
-                            <>
-                              Upload Document{' '}
-                              <span className="text-destructive">*</span>
-                            </>
-                          }
-                          accept="*/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              updateDocumentFile(index, file);
-                            }
-                            trigger(`documents.${index}.file`);
-                          }}
-                          onBlur={() => trigger(`documents.${index}.file`)}
-                          className="cursor-pointer"
-                          disabled={isUploading}
-                          error={
-                            errors.documents?.[index]?.file?.message as string
-                          }
-                        />
-                      ) : (
-                        <div>
-                          <div className="pt-7">
-                            <div className="text-sm text-muted-foreground">
-                              File uploaded
-                            </div>
-                          </div>
-                          {hasFile && !isUploading && (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <CheckCircle2 className="h-4 w-4 text-success" />
-                              <span>Document uploaded</span>
-                              {fileUrl && (
-                                <a
-                                  href={fileUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="ml-2 flex items-center gap-1 text-primary hover:underline"
-                                >
-                                  <Download className="h-3 w-3" />
-                                  View
-                                </a>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 items-center sm:mt-7">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => removeDocument(index)}
-                        className="h-10 w-10"
-                        disabled={isUploading}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Remove document</span>
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addDocument}
-                className="w-full sm:w-auto"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Document
-              </Button>
-            </div>
-            {errors.documents &&
-              typeof errors.documents.message === 'string' && (
-                <p className="text-sm text-destructive">
-                  {errors.documents.message}
-                </p>
-              )}
+            <DocumentUpload<EmployeeFormData>
+              documents={documents}
+              onAddDocument={addDocument}
+              onRemoveDocument={removeDocument}
+              onUpdateDocumentName={updateDocumentName}
+              onUpdateDocumentFile={updateDocumentFile}
+              documentService={employeeDocumentsService}
+              errors={errors}
+              trigger={trigger}
+              fieldName="documents"
+            />
           </CardContent>
         </Card>
 
