@@ -8,7 +8,7 @@ import {
 } from '@devbooks/components';
 import { Button } from '@devbooks/ui';
 import { employeesService } from '../../../services';
-import type { Employee } from '../../../../../../libs/utils/src/types';
+import type { Employee } from '@devbooks/utils';
 import {
   useToast,
   useDebounce,

@@ -10,8 +10,8 @@ import type {
   Employee,
   UpdateEmployeeInput,
   CreateEmployeeInput,
-} from '../../../../../../libs/utils/src/types';
-import type { EmployeeFormData } from '../../../../../../libs/utils/src/types';
+} from '@devbooks/utils';
+import type { EmployeeFormData } from '@devbooks/utils';
 
 // Create schema - documents are required for new employees
 const createEmployeeSchema = (isEditMode: boolean) => {
