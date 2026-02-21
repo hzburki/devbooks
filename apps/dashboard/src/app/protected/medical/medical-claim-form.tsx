@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { DashboardPage } from '@devbooks/components';
+import { DashboardPage, DocumentUpload } from '@devbooks/components';
 import {
   Button,
   Input,
@@ -11,21 +11,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@devbooks/ui';
+import { Heart, Edit, ArrowLeft, Trash2, Plus } from '@devbooks/ui';
 import {
-  Heart,
-  Edit,
-  ArrowLeft,
-  Trash2,
-  Plus,
-  CheckCircle2,
-  Download,
-} from '@devbooks/ui';
-import { useMedicalClaimForm, type ReceiptItem } from './use-medical-claim-form';
+  useMedicalClaimForm,
+  type ReceiptItem,
+  type MedicalClaimFormData,
+} from './use-medical-claim-form';
 import { medicalReceiptsService } from '../../../services';
-import type {
-  MedicalBenefitsFor,
-  MedicalCategory,
-} from '@devbooks/utils';
+import type { DocumentUploadService } from '@devbooks/components';
+import type { MedicalBenefitsFor, MedicalCategory } from '@devbooks/utils';
 
 const medicalCategories = [
   {
@@ -48,6 +42,18 @@ const beneficiaries = [
   { value: 'children', label: 'Children' },
 ];
 
+const noop = () => {
+  /* no-op for DocumentUpload when fields are hidden */
+};
+
+const medicalDocumentService: DocumentUploadService = {
+  async uploadDocument(file, _name, onProgress) {
+    const filePath = await medicalReceiptsService.uploadReceipt(file, onProgress);
+    return { id: filePath, filePath };
+  },
+  getPublicUrl: medicalReceiptsService.getPublicUrl,
+};
+
 const MedicalClaimForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -63,7 +69,6 @@ const MedicalClaimForm = () => {
   } = useMedicalClaimForm(id);
 
   const {
-    register,
     handleSubmit,
     watch,
     setValue,
@@ -133,7 +138,7 @@ const MedicalClaimForm = () => {
   const removeReceipt = (index: number) => {
     const currentReceipts = watch('receipts') || [];
     const receipt = currentReceipts[index];
-    
+
     if (receipt.id) {
       // Mark as deleted for existing receipts
       const updated = [...currentReceipts];
@@ -144,7 +149,7 @@ const MedicalClaimForm = () => {
       const updated = currentReceipts.filter((_, i) => i !== index);
       setValue('receipts', updated);
     }
-    
+
     trigger('receipts');
   };
 
@@ -170,7 +175,7 @@ const MedicalClaimForm = () => {
   const removeFile = (index: number) => {
     const currentReceipts = watch('receipts') || [];
     const receipt = currentReceipts[index];
-    
+
     // Clear file and filePath to allow re-upload
     const updated = [...currentReceipts];
     updated[index] = {
@@ -255,41 +260,21 @@ const MedicalClaimForm = () => {
                 const actualIndex = receipts.findIndex(
                   (r, i) => !r.isDeleted && i === index,
                 );
-                const isUploading = receipt.isUploading;
-                const hasFile = receipt.id || receipt.filePath || receipt.file;
-                const fileUrl = receipt.filePath
-                  ? medicalReceiptsService.getPublicUrl(receipt.filePath)
-                  : null;
+
+                const receiptAsDocument = {
+                  name: receipt.description || '',
+                  file: receipt.file,
+                  filePath: receipt.filePath,
+                  isUploading: receipt.isUploading,
+                  uploadProgress: receipt.uploadProgress || 0,
+                  isDeleted: false,
+                };
 
                 return (
                   <div
                     key={receipt.id || `new-${actualIndex}`}
                     className="relative flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-start"
                   >
-                    {/* Loading Overlay */}
-                    {isUploading && (
-                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
-                        <div className="w-full max-w-md space-y-2 px-4">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">
-                              Uploading...
-                            </span>
-                            <span className="text-muted-foreground">
-                              {receipt.uploadProgress || 0}%
-                            </span>
-                          </div>
-                          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full bg-primary transition-all duration-300"
-                              style={{
-                                width: `${receipt.uploadProgress || 0}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Left Section - Receipt Fields */}
                     <div className="flex-1 space-y-4">
                       <div className="grid gap-4 sm:grid-cols-2">
@@ -313,9 +298,10 @@ const MedicalClaimForm = () => {
                             options={beneficiaries}
                             placeholder="Select beneficiary"
                             error={
-                              errors.receipts?.[actualIndex]?.for?.message as string
+                              errors.receipts?.[actualIndex]?.for
+                                ?.message as string
                             }
-                            disabled={isUploading}
+                            disabled={receipt.isUploading}
                           />
                         </div>
 
@@ -324,7 +310,8 @@ const MedicalClaimForm = () => {
                           <Select
                             label={
                               <>
-                                Category <span className="text-destructive">*</span>
+                                Category{' '}
+                                <span className="text-destructive">*</span>
                               </>
                             }
                             id={`receipt-category-${actualIndex}`}
@@ -342,7 +329,7 @@ const MedicalClaimForm = () => {
                               errors.receipts?.[actualIndex]?.medicalCategory
                                 ?.message as string
                             }
-                            disabled={isUploading}
+                            disabled={receipt.isUploading}
                           />
                         </div>
                       </div>
@@ -374,7 +361,7 @@ const MedicalClaimForm = () => {
                               ?.message as string
                           }
                           rows={2}
-                          disabled={isUploading}
+                          disabled={receipt.isUploading}
                         />
                       </div>
 
@@ -407,78 +394,31 @@ const MedicalClaimForm = () => {
                             errors.receipts?.[actualIndex]?.costPkr
                               ?.message as string
                           }
-                          disabled={isUploading}
+                          disabled={receipt.isUploading}
                         />
                       </div>
                     </div>
 
-                    {/* Right Section - File Upload */}
-                    <div className="flex-1 space-y-2">
-                      {!hasFile ? (
-                        <Input
-                          id={`receipt-file-${actualIndex}`}
-                          type="file"
-                          label={
-                            <>
-                              Upload Receipt{' '}
-                              <span className="text-destructive">*</span>
-                            </>
-                          }
-                          accept="image/*,.pdf"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              handleFileChange(actualIndex, file);
-                            }
-                          }}
-                          onBlur={() =>
-                            trigger(`receipts.${actualIndex}.file`)
-                          }
-                          className="cursor-pointer"
-                          disabled={isUploading}
-                          error={
-                            errors.receipts?.[actualIndex]?.file
-                              ?.message as string
-                          }
-                        />
-                      ) : (
-                        <div>
-                          <div className="pt-7">
-                            <div className="text-sm text-muted-foreground">
-                              File uploaded
-                            </div>
-                          </div>
-                          {hasFile && !isUploading && (
-                            <div className="mt-2 flex flex-col gap-2">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span>Receipt uploaded</span>
-                                {fileUrl && (
-                                  <a
-                                    href={fileUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ml-2 flex items-center gap-1 text-primary hover:underline"
-                                  >
-                                    <Download className="h-3 w-3" />
-                                    View
-                                  </a>
-                                )}
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeFile(actualIndex)}
-                                className="w-fit text-xs"
-                                disabled={isUploading}
-                              >
-                                Remove & Re-upload
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                    {/* Right Section - Document Upload */}
+                    <div className="flex-1">
+                      <DocumentUpload<MedicalClaimFormData>
+                        documents={[receiptAsDocument]}
+                        onAddDocument={noop}
+                        onRemoveDocument={() => removeFile(actualIndex)}
+                        onUpdateDocumentName={noop}
+                        onUpdateDocumentFile={(_, file) =>
+                          handleFileChange(actualIndex, file)
+                        }
+                        documentService={medicalDocumentService}
+                        errors={errors}
+                        trigger={trigger}
+                        fieldName="receipts"
+                        uploadLabel="Upload Receipt"
+                        accept="image/*,.pdf"
+                        hideDocumentName
+                        hideAddButton
+                        fieldIndexOffset={actualIndex}
+                      />
                     </div>
 
                     {/* Delete Receipt Button - Top Right */}
@@ -489,7 +429,7 @@ const MedicalClaimForm = () => {
                         size="icon"
                         onClick={() => removeReceipt(actualIndex)}
                         className="h-10 w-10 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                        disabled={isUploading}
+                        disabled={receipt.isUploading}
                         title="Delete receipt"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -512,12 +452,11 @@ const MedicalClaimForm = () => {
                 </Button>
               )}
             </div>
-            {errors.receipts &&
-              typeof errors.receipts.message === 'string' && (
-                <p className="text-sm text-destructive">
-                  {errors.receipts.message}
-                </p>
-              )}
+            {errors.receipts && typeof errors.receipts.message === 'string' && (
+              <p className="text-sm text-destructive">
+                {errors.receipts.message}
+              </p>
+            )}
           </CardContent>
         </Card>
 

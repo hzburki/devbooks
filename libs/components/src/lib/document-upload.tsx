@@ -1,6 +1,10 @@
 import { Button, Input } from '@devbooks/ui';
 import { Plus, Trash2, CheckCircle2, Download } from '@devbooks/ui';
-import type { FieldErrors, UseFormTrigger } from 'react-hook-form';
+import type {
+  FieldErrors,
+  FieldValues,
+  UseFormTrigger,
+} from 'react-hook-form';
 
 /**
  * Generic document type for the upload component
@@ -40,7 +44,9 @@ export interface DocumentUploadService {
   getPublicUrl(filePath: string): string;
 }
 
-export interface DocumentUploadProps<TFieldValues = any> {
+export interface DocumentUploadProps<
+  TFieldValues extends FieldValues = FieldValues,
+> {
   /**
    * Array of documents to display
    */
@@ -114,13 +120,33 @@ export interface DocumentUploadProps<TFieldValues = any> {
    * @default true
    */
   firstDocumentRequired?: boolean;
+
+  /**
+   * When true, hides the document name field (useful when name is captured elsewhere)
+   * @default false
+   */
+  hideDocumentName?: boolean;
+
+  /**
+   * When true, hides the Add Document button (useful for single-document embedded use)
+   * @default false
+   */
+  hideAddButton?: boolean;
+
+  /**
+   * Offset to add to document index when resolving field paths (e.g. for embedded use per item)
+   * Use when each DocumentUpload instance represents one item in a parent array.
+   */
+  fieldIndexOffset?: number;
 }
 
 /**
  * Reusable document upload component
  * Can be used with any form and any document service
  */
-export function DocumentUpload<TFieldValues = any>({
+export function DocumentUpload<
+  TFieldValues extends FieldValues = FieldValues,
+>({
   documents,
   onAddDocument,
   onRemoveDocument,
@@ -134,16 +160,22 @@ export function DocumentUpload<TFieldValues = any>({
   uploadLabel = 'Upload Document',
   accept = '*/*',
   firstDocumentRequired = true,
+  hideDocumentName = false,
+  hideAddButton = false,
+  fieldIndexOffset = 0,
 }: DocumentUploadProps<TFieldValues>) {
+  const getFieldIndex = (index: number) => fieldIndexOffset + index;
+
   return (
     <div className="space-y-4">
       {documents.map((document, index) => {
         if (document.isDeleted) {
           return null;
         }
+        const fieldIndex = getFieldIndex(index);
         const isUploading = document.isUploading;
         const uploadProgress = document.uploadProgress || 0;
-        const hasFile = document.id || document.filePath;
+        const hasFile = document.id || document.filePath || document.file;
         const fileUrl = document.filePath
           ? documentService.getPublicUrl(document.filePath)
           : null;
@@ -157,7 +189,7 @@ export function DocumentUpload<TFieldValues = any>({
           | undefined;
         const documentErrors =
           fieldErrors && !('message' in fieldErrors)
-            ? fieldErrors[index]
+            ? (fieldErrors as Record<number, { name?: { message?: string }; file?: { message?: string } }>)[fieldIndex]
             : undefined;
 
         return (
@@ -182,27 +214,29 @@ export function DocumentUpload<TFieldValues = any>({
                 </div>
               </div>
             )}
-            <div className="flex-1 space-y-2">
-              <Input
-                id={`document-name-${index}`}
-                label={
-                  index === 0 && firstDocumentRequired ? (
-                    <>
-                      {documentNameLabel}{' '}
-                      <span className="text-destructive">*</span>
-                    </>
-                  ) : (
-                    documentNameLabel
-                  )
-                }
-                placeholder="Enter document name"
-                value={document.name || ''}
-                onChange={(e) => onUpdateDocumentName(index, e.target.value)}
-                onBlur={() => trigger(`${fieldName}.${index}.name` as any)}
-                error={documentErrors?.name?.message as string}
-                disabled={isUploading}
-              />
-            </div>
+            {!hideDocumentName && (
+              <div className="flex-1 space-y-2">
+                <Input
+                  id={`document-name-${index}`}
+                  label={
+                    index === 0 && firstDocumentRequired ? (
+                      <>
+                        {documentNameLabel}{' '}
+                        <span className="text-destructive">*</span>
+                      </>
+                    ) : (
+                      documentNameLabel
+                    )
+                  }
+                  placeholder="Enter document name"
+                  value={document.name || ''}
+                  onChange={(e) => onUpdateDocumentName(index, e.target.value)}
+                  onBlur={() => trigger(`${fieldName}.${fieldIndex}.name` as any)}
+                  error={documentErrors?.name?.message as string}
+                  disabled={isUploading}
+                />
+              </div>
+            )}
             <div className="flex-1 space-y-2">
               {!hasFile ? (
                 <Input
@@ -220,9 +254,9 @@ export function DocumentUpload<TFieldValues = any>({
                     if (file) {
                       onUpdateDocumentFile(index, file);
                     }
-                    trigger(`${fieldName}.${index}.file` as any);
+                    trigger(`${fieldName}.${fieldIndex}.file` as any);
                   }}
-                  onBlur={() => trigger(`${fieldName}.${index}.file` as any)}
+                  onBlur={() => trigger(`${fieldName}.${fieldIndex}.file` as any)}
                   className="cursor-pointer"
                   disabled={isUploading}
                   error={documentErrors?.file?.message as string}
@@ -268,15 +302,17 @@ export function DocumentUpload<TFieldValues = any>({
           </div>
         );
       })}
-      <Button
-        type="button"
-        variant="outline"
-        onClick={onAddDocument}
-        className="w-full sm:w-auto"
-      >
-        <Plus className="mr-2 h-4 w-4" />
-        Add Document
-      </Button>
+      {!hideAddButton && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onAddDocument}
+          className="w-full sm:w-auto"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Add Document
+        </Button>
+      )}
       {errors &&
         errors[fieldName as keyof typeof errors] &&
         typeof (errors[fieldName as keyof typeof errors] as { message?: string })
