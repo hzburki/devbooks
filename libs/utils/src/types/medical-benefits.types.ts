@@ -2,7 +2,12 @@
  * Medical benefits related types and interfaces
  */
 
-export type MedicalBenefitsFor = 'self' | 'spouse' | 'parents' | 'siblings' | 'children';
+export type MedicalBenefitsFor =
+  | 'self'
+  | 'spouse'
+  | 'parents'
+  | 'siblings'
+  | 'children';
 
 export type MedicalCategory =
   | 'surgery_and_hospitalization'
@@ -107,24 +112,6 @@ export interface UpdateMedicalBenefitInput {
 export interface CreateMedicalCategoryLimitInput {
   medical_category: MedicalCategory;
   limit: number;
-}
-
-/**
- * Employee limit summary (aggregated view)
- */
-export interface EmployeeLimitSummary {
-  employee_id: string;
-  employee_name: string;
-  year: number;
-  total_used: number;
-  total_limit: number;
-  remaining: number;
-  category_breakdown: {
-    category: MedicalCategory;
-    used: number;
-    limit: number;
-    remaining: number;
-  }[];
 }
 
 /**

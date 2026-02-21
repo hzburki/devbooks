@@ -8,7 +8,6 @@ import type {
   CreateMedicalCategoryLimitInput,
   GetMedicalBenefitRecordsParams,
   MedicalBenefitRecordsPaginatedResponse,
-  EmployeeLimitSummary,
 } from '@devbooks/utils';
 
 const ANNUAL_LIMIT_PKR = 400000; // Rs. 400,000 per year per employee
@@ -20,7 +19,14 @@ export const medicalBenefitsService = {
   async getAllRecords(
     params: GetMedicalBenefitRecordsParams = {},
   ): Promise<MedicalBenefitRecordsPaginatedResponse> {
-    const { page = 1, pageSize = 10, employeeId, year, paid, category } = params;
+    const {
+      page = 1,
+      pageSize = 10,
+      employeeId,
+      year,
+      paid,
+      category,
+    } = params;
 
     let query = supabase
       .from('medical_benefit_records')
@@ -404,7 +410,7 @@ export const medicalBenefitsService = {
   async getEmployeeLimitSummary(
     employeeId: string,
     year: number,
-  ): Promise<EmployeeLimitSummary> {
+  ): Promise<any> {
     // Get all records for the employee in the year
     const response = await this.getAllRecords({
       employeeId,
@@ -412,12 +418,6 @@ export const medicalBenefitsService = {
       pageSize: 10000, // Get all records
     });
     const records = response.records || [];
-
-    // Get category limits
-    const categoryLimits = await this.getCategoryLimits();
-    const categoryLimitMap = new Map(
-      categoryLimits.map((cl) => [cl.medical_category, cl.limit]),
-    );
 
     // Calculate totals
     const categoryTotals = new Map<string, number>();
@@ -429,16 +429,6 @@ export const medicalBenefitsService = {
       categoryTotals.set(category, current + record.cost_pkr);
       totalUsed += record.cost_pkr;
     });
-
-    // Build category breakdown
-    const categoryBreakdown = Array.from(categoryTotals.entries()).map(
-      ([category, used]) => ({
-        category: category as any,
-        used,
-        limit: categoryLimitMap.get(category) || 0,
-        remaining: Math.max(0, (categoryLimitMap.get(category) || 0) - used),
-      }),
-    );
 
     const employee = records[0]?.employee;
     if (!employee) {
@@ -513,10 +503,7 @@ export const medicalBenefitsService = {
    * Update employee medical limits based on current records
    * This should be called after creating/updating/deleting records
    */
-  async updateEmployeeLimits(
-    employeeId: string,
-    year: number,
-  ): Promise<void> {
+  async updateEmployeeLimits(employeeId: string, year: number): Promise<void> {
     // Get category limits
     const categoryLimits = await this.getCategoryLimits();
     const categoryLimitMap = new Map(
@@ -578,39 +565,5 @@ export const medicalBenefitsService = {
         });
       }
     }
-  },
-
-  /**
-   * Get all employee limit summaries for a year
-   */
-  async getAllEmployeeLimitSummaries(
-    year: number,
-  ): Promise<EmployeeLimitSummary[]> {
-    // Get all employees
-    const { data: employees } = await supabase
-      .from('employees')
-      .select('id, full_name')
-      .is('deleted_at', null);
-
-    if (!employees) {
-      return [];
-    }
-
-    // Get summaries for each employee
-    const summaries = await Promise.all(
-      employees.map((emp) =>
-        this.getEmployeeLimitSummary(emp.id, year).catch(() => ({
-          employee_id: emp.id,
-          employee_name: emp.full_name,
-          year,
-          total_used: 0,
-          total_limit: ANNUAL_LIMIT_PKR,
-          remaining: ANNUAL_LIMIT_PKR,
-          category_breakdown: [],
-        })),
-      ),
-    );
-
-    return summaries;
   },
 };
