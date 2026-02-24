@@ -2,16 +2,29 @@ import { supabase } from '../lib/supabase/client';
 
 const ALLOWED_DOMAIN = 'ideamappers.com';
 
+/**
+ * Base URL for OAuth redirects. Use VITE_APP_URL in production (e.g. Amplify env)
+ * so the correct callback URL is baked in; fallback to window.location.origin for local dev.
+ */
+function getAuthRedirectBase(): string {
+  const envUrl = import.meta.env.VITE_APP_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
+    return envUrl.replace(/\/$/, '');
+  }
+  return window.location.origin;
+}
+
 export const authService = {
   /**
    * Sign in or sign up with Google OAuth
    * Automatically handles both sign-in and sign-up
    */
   async signInWithGoogle() {
+    const redirectTo = `${getAuthRedirectBase()}/auth/callback`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `https://devbook.ideamappers.com/auth/callback`,
+        redirectTo,
         queryParams: {
           hd: ALLOWED_DOMAIN, // Restrict to ideamappers.com domain
         },
