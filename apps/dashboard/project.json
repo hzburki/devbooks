@@ -1,0 +1,8 @@
+{
+  "name": "@devbooks/dashboard",
+  "targets": {
+    "build": {
+      "outputs": ["{workspaceRoot}/dist/apps/dashboard"]
+    }
+  }
+}
