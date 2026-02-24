@@ -5,6 +5,7 @@ import {
   Label,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Select,
@@ -16,6 +17,7 @@ import { CalendarPlus, ArrowLeft, Edit } from '@devbooks/ui';
 import { cn } from '@devbooks/ui';
 import { format } from 'date-fns';
 import { useLeaveForm } from './use-leave-form';
+import { LeaveType } from '@devbooks/utils';
 
 const leaveTypes = [
   { value: 'casual', label: 'Casual Leave' },
@@ -51,15 +53,28 @@ const LeaveForm = () => {
   const partialLeave = watch('partialLeave');
   const deadlineExtended = watch('deadlineExtended');
 
-  // Calculate number of days
+  // Calculate number of days (excluding weekends)
   const calculateDays = () => {
     if (!startDate || !endDate) return null;
+
     const start = new Date(startDate);
     const end = new Date(endDate);
+
     if (end < start) return null;
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    return diffDays;
+
+    let count = 0;
+    const startNorm = new Date(start);
+    startNorm.setHours(0, 0, 0, 0);
+    const endNorm = new Date(end);
+    endNorm.setHours(0, 0, 0, 0);
+
+    while (startNorm <= endNorm) {
+      const day = startNorm.getDay();
+      if (day !== 0 && day !== 6) count += 1;
+      startNorm.setDate(startNorm.getDate() + 1);
+    }
+
+    return count;
   };
 
   const numberOfDays = calculateDays();
@@ -153,12 +168,7 @@ const LeaveForm = () => {
                 }
                 id="leaveType"
                 value={watch('leaveType')}
-                onChange={(value) =>
-                  setValue(
-                    'leaveType',
-                    value as 'casual' | 'sick' | 'parental' | 'other',
-                  )
-                }
+                onChange={(value) => setValue('leaveType', value as LeaveType)}
                 options={leaveTypes}
                 placeholder="Select a leave type"
                 error={errors.leaveType?.message}
@@ -171,6 +181,9 @@ const LeaveForm = () => {
         <Card>
           <CardHeader>
             <CardTitle>Duration</CardTitle>
+            <CardDescription>
+              Weekends and public holidays are not counted in the total days.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 sm:grid-cols-3">

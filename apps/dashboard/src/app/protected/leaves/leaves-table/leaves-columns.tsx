@@ -63,8 +63,4 @@ export const leaveTableColumns: Column<LeaveRequest>[] = [
       </span>
     ),
   },
-  {
-    header: 'Requested At',
-    render: (leave) => format(new Date(leave.created_at), 'MMM d, yyyy'),
-  },
 ];

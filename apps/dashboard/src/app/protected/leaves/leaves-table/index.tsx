@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardPage, TableSearchBar, DataTable } from '@devbooks/components';
 import { Button, Select } from '@devbooks/ui';
 import { leavesService } from '../../../../services';
-import type { LeaveRequest, LeaveStatus } from '@devbooks/utils';
+import {
+  LEAVE_STATUS_TYPES,
+  type LeaveRequest,
+  type LeaveStatus,
+  type LeaveStatusOption,
+} from '@devbooks/utils';
 import { CalendarPlus, Edit, Check, X, CalendarDays } from '@devbooks/ui';
 import { useQuery } from '@tanstack/react-query';
 import { leaveTableColumns } from './leaves-columns';
@@ -29,6 +34,8 @@ const LeavesTable = () => {
       }),
   });
 
+  const leaveRequests: LeaveRequest[] = response?.leaveRequests || [];
+
   const handleApproveClick = (id: string) => {
     setSelectedLeaveId(id);
     setApproveDialogOpen(true);
@@ -49,14 +56,7 @@ const LeavesTable = () => {
     if (!open) setSelectedLeaveId(null);
   };
 
-  const leaveRequests: LeaveRequest[] = response?.leaveRequests || [];
-
-  const leavesStatusOptions = [
-    { value: 'all', label: 'All' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' },
-  ];
+  const leavesStatusOptions: LeaveStatusOption[] = LEAVE_STATUS_TYPES;
 
   return (
     <DashboardPage
@@ -127,36 +127,36 @@ const LeavesTable = () => {
                 <Edit className="h-4 w-4" />
                 <span className="sr-only">Edit</span>
               </Button>
-              {leave.leave_status === 'pending' && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-success hover:bg-success hover:text-success-foreground"
-                    onClick={() => handleApproveClick(leave.id)}
-                    title="Approve Leave Request"
-                    disabled={
-                      approveDialogOpen || rejectDialogOpen
-                    }
-                  >
-                    <Check className="h-4 w-4" />
-                    <span className="sr-only">Approve</span>
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => handleRejectClick(leave.id)}
-                    title="Reject Leave Request"
-                    disabled={
-                      approveDialogOpen || rejectDialogOpen
-                    }
-                  >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Reject</span>
-                  </Button>
-                </>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-success hover:bg-success hover:text-success-foreground"
+                onClick={() => handleApproveClick(leave.id)}
+                title="Approve Leave Request"
+                disabled={
+                  leave.leave_status !== 'pending' ||
+                  approveDialogOpen ||
+                  rejectDialogOpen
+                }
+              >
+                <Check className="h-4 w-4" />
+                <span className="sr-only">Approve</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                onClick={() => handleRejectClick(leave.id)}
+                title="Reject Leave Request"
+                disabled={
+                  leave.leave_status !== 'pending' ||
+                  approveDialogOpen ||
+                  rejectDialogOpen
+                }
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Reject</span>
+              </Button>
             </>
           )}
           getRowId={(leave) => leave.id}
