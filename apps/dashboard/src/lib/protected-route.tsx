@@ -21,7 +21,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Check initial authentication status
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
       } catch {
         setIsAuthenticated(false);
@@ -61,5 +63,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Render protected content if authenticated
-  return <>{children}</>;
+  return children;
 }

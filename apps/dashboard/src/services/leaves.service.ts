@@ -5,7 +5,6 @@ import type {
   UpdateLeaveRequestInput,
   GetAllLeaveRequestsParams,
   LeaveRequestsPaginatedResponse,
-  LeaveStatus,
 } from '@devbooks/utils';
 
 /**

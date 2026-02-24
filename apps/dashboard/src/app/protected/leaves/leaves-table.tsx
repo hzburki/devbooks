@@ -52,11 +52,7 @@ const LeavesTable = () => {
   const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
 
   // Fetch leave requests
-  const {
-    data: response,
-    error,
-    isLoading,
-  } = useQuery({
+  const { data: response, isLoading } = useQuery({
     queryKey: ['leave-requests', statusFilter, searchQuery],
     queryFn: () =>
       leavesService.getAll({
