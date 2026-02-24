@@ -11,7 +11,7 @@ export const authService = {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `https://devbook.ideamappers.com/auth/callback`,
         queryParams: {
           hd: ALLOWED_DOMAIN, // Restrict to ideamappers.com domain
         },
@@ -47,7 +47,7 @@ export const authService = {
       // Sign out if domain doesn't match
       await supabase.auth.signOut();
       throw new Error(
-        `Access denied. Only @${ALLOWED_DOMAIN} email addresses are allowed.`
+        `Access denied. Only @${ALLOWED_DOMAIN} email addresses are allowed.`,
       );
     }
 
@@ -61,7 +61,10 @@ export const authService = {
    * Get current user session
    */
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error) {
       throw new Error(`Failed to get user: ${error.message}`);
@@ -74,7 +77,10 @@ export const authService = {
    * Get current session
    */
   async getSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
     if (error) {
       throw new Error(`Failed to get session: ${error.message}`);
